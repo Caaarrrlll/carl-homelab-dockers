@@ -30,15 +30,22 @@ jobs:
         if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
         uses: dorny/paths-filter@v3
         with:
+          # 'every': a file counts only if it matches ALL patterns of a filter,
+          # so the '!**/*.md' lines exclude docs. README/audit edits never rebuild.
+          predicate-quantifier: 'every'
           filters: |
             debian:
               - 'images/systems/debian-base/**'
+              - '!**/*.md'
             fedora:
               - 'images/systems/fedora-base/**'
+              - '!**/*.md'
             wine:
               - 'images/systems/wine-base/**'
+              - '!**/*.md'
             asa:
               - 'images/games/asa-docker/**'
+              - '!**/*.md'
             workflow:
               - '.github/workflows/build-images.yml'
 

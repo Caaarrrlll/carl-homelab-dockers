@@ -108,8 +108,12 @@ To roll back without local Docker, run the **Retag image** workflow
 (source `previous` or a date/`sha-` tag → target `latest`) and force-update
 the containers in Unraid, or pin the template's Repository to one of those
 tags. GitHub Actions is the primary build path; the maintainer does not
-keep Docker installed locally, so the `docker-updater` scripts are optional. Changes under `templates/`, `docs/` or root Markdown
-files do not trigger builds. It expects repository secrets
+keep Docker installed locally, so the `docker-updater` scripts are optional.
+Changes under `templates/`, `docs/`, root files and **any `*.md` file**
+(including image READMEs and `audit.md`) do not trigger builds; the path
+filter excludes `**/*.md`. A change to the workflow file itself rebuilds
+debian → wine → asa, so put `[skip ci]` in the commit message when a workflow
+edit shouldn't rebuild anything. It expects repository secrets
 `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`.
 
 ## Conventions

@@ -63,7 +63,9 @@ CI uses `.github/workflows/build-images.yml` instead. On a push it rebuilds only
 the affected images, in dependency order: a Debian change rebuilds debian →
 wine → asa, a Wine change rebuilds wine → asa, and a Fedora change rebuilds
 Fedora only. Tag pushes and manual dispatches rebuild debian → wine → asa;
-Fedora is excluded unless you tick `build_fedora` on a manual run. Every
+Fedora is excluded unless you tick `build_fedora` on a manual run. Markdown
+files (READMEs, `audit.md`, docs) never trigger a rebuild; add `[skip ci]` to a
+commit message to skip the workflow entirely. Every
 image is pushed as `latest` plus rollback tags `YYYY-MM-DD` and
 `sha-<commit>` (Debian: `trixie-` prefixed), and the image it replaces is kept
 as `previous`. To roll back, run the **Retag image** workflow

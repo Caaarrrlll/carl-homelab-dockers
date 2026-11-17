@@ -84,7 +84,9 @@ and referenced from this file.
   `GameUserSettings.ini`. RCON client: `gorcon/rcon-cli` 0.10.3, pinned by
   SHA-256. The first live stop test made **no** save: the stop trap ended the
   `su` session before saving, and `pidof` didn't find the Wine process. Fixed
-  the same day (save first, `pgrep -f`, session ended last); re-test pending.
+  the same day (save first, `pgrep -f`, session ended last). Re-test on the
+  fixed image passed: `SaveWorld: World Saved`, then SIGTERM after `DoExit`
+  (ARK under Wine doesn't exit within 15 s, which is harmless once saved).
 - Small script fixes: `DEBUG` check no longer errors on an empty value,
   SteamCMD is downloaded over HTTPS, and the Dockerfile uses `COPY`.
 - `ROADMAP.md` added (risk-rated open items); `AGENTS.md` gained a
@@ -94,6 +96,8 @@ and referenced from this file.
   so it needs a proper planning session first. Crashes are restarted by hand
   until then. All of today's changes need a server test before further
   roadmap work (housekeeping item 7).
+- CI path filter ignores `**/*.md`, so README/audit/doc edits no longer
+  rebuild images.
 - CI: every image build now uses `pull: true` + `no-cache: true`, so base
   image and package updates are always picked up.
 

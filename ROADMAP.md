@@ -98,6 +98,33 @@ would only show up at runtime.
 without them and remove them if nothing breaks (smaller image, faster
 `no-cache` builds). Keep `winbind` (Wine uses `ntlm_auth`).
 
+### 15. Corrupt GameAnalytics database in the logs
+**Risk: 🟢 Low.** It's ARK's built-in usage-statistics database (reports
+gameplay data to the developers); it holds nothing related to saves, configs
+or cluster data. Cosmetic: it only adds log noise, and isn't linked to the idle
+crashes as far as we know.
+
+Every ARK log shows repeated lines like
+`Debug/GameAnalytics : SQLITE3 FINALIZE ERROR: database disk image is malformed`
+and `fixMissingSessionEndEvents -- JSON error` (seen on Astraeos, 2026-11-17).
+Likely cause: all 13 servers share one install, so they probably share one
+GameAnalytics SQLite file and write to it at the same time, which corrupts it.
+
+1. **Find it**, with all ASA servers stopped:
+   `find /mnt/cache/appdata/ark-sa-new \( -iname '*gameanalytics*' -o -iname '*.sqlite*' -o -iname '*.db' \) 2>/dev/null`
+   (it's probably under `ShooterGame/Saved/` or inside the Wine prefix
+   `WINE64/drive_c/users/.../AppData/`).
+2. **Clean it:** rename it to `*.bak` rather than deleting it, start one
+   server, and check that ARK creates a fresh file and the errors are gone.
+3. **Expect it to come back** while 13 servers share the file. A lasting fix
+   would be one of:
+   - a way to turn GameAnalytics off (research a launch flag or ini
+     setting; none known yet);
+   - giving each container its own copy of that one folder through a
+     per-server path mapping over it (the same trick as a per-server
+     `Saved/Logs`), if the location allows it.
+4. Record the result in the ASA `audit.md` and close this item.
+
 ## Future / research
 
 ### 14. Chore: Wine vs Proton / Proton-GE for the ASA server
@@ -134,8 +161,10 @@ can run without the Steam client, so it may be worth another look.
 0. **Test first:** nothing on this list starts until the servers have been
    tested on the 2026-11-17 image changes (housekeeping item 7).
 1. 🟡 Item 9 (remove `screen`/`xvfb`), tested on one server.
-2. ⏸️ Item 1 stays parked until a dedicated planning session.
-3. 🔭 Item 14 (Wine vs Proton research) whenever there's time; it doesn't
+2. 🟢 Item 15 (GameAnalytics log noise) during any window when all servers are
+   stopped anyway.
+3. ⏸️ Item 1 stays parked until a dedicated planning session.
+4. 🔭 Item 14 (Wine vs Proton research) whenever there's time; it doesn't
    block anything.
 
 Rollback for any of these: ASA README → "Rolling back to an earlier image".
