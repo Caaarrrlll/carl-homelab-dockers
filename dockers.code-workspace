@@ -19,6 +19,18 @@
 		{
 			"name": "ASA Docker / ARK: Survival Ascended",
 			"path": "images/games/asa-docker"
+		},
+		{
+			"name": "Unraid Templates",
+			"path": "templates"
+		},
+		{
+			"name": "Docs",
+			"path": "docs"
+		},
+		{
+			"name": "Build Scripts",
+			"path": "scripts"
 		}
 	],
 	"settings": {

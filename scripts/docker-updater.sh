@@ -29,7 +29,13 @@ error() {
 trap error ERR
 
 buildpush "images/systems/debian-base" "${DOCKERHUB_USER}/debian-slim-baseimage:trixie-latest"
-buildpush "images/systems/fedora-base" "${DOCKERHUB_USER}/fedora-baseimage:latest"
+# Fedora is parked: only build it when explicitly asked (BUILD_FEDORA=1), same as CI.
+if [ "${BUILD_FEDORA:-0}" = "1" ]; then
+    buildpush "images/systems/fedora-base" "${DOCKERHUB_USER}/fedora-baseimage:latest"
+else
+    echo
+    echo "=== Skipping Fedora (set BUILD_FEDORA=1 to build it) ==="
+fi
 buildpush "images/systems/wine-base" "${DOCKERHUB_USER}/wine-baseimage:latest"
 buildpush "images/games/asa-docker" "${DOCKERHUB_USER}/asa-wine:latest"
 

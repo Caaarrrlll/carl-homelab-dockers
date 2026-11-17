@@ -42,6 +42,14 @@ jobs:
             workflow:
               - '.github/workflows/build-images.yml'
 
+      # Rollback tags: every build is also pushed as <date> and sha-<short>, so
+      # the Unraid template can be pinned back to a known-good image.
+      - name: Compute rollback tags
+        id: tags
+        run: |
+          echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          echo "sha=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -51,21 +59,73 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # Keep the image that is about to be replaced as :trixie-previous (registry-side
+      # copy, nothing is downloaded). Gives a one-step rollback target.
+      - name: Keep current Debian base as :trixie-previous
+        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.workflow == 'true'
+        env:
+          SRC: ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-latest
+          DST: ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-previous
+        run: |
+          if docker buildx imagetools inspect "$SRC" > /dev/null 2>&1; then
+            docker buildx imagetools create -t "$DST" "$SRC"
+          else
+            echo "::notice::$SRC does not exist yet, nothing to keep"
+          fi
+
       - name: Build and push Debian base
         if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.workflow == 'true'
         uses: docker/build-push-action@v6
         with:
           context: images/systems/debian-base
+          pull: true
+          no-cache: true
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-${{ steps.tags.outputs.date }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-${{ steps.tags.outputs.sha }}
+
+      # Keep the image that is about to be replaced as :previous (registry-side
+      # copy, nothing is downloaded). Gives a one-step rollback target.
+      - name: Keep current Fedora base as :previous
+        if: steps.changes.outputs.fedora == 'true' || (github.event_name == 'workflow_dispatch' && inputs.build_fedora)
+        env:
+          SRC: ${{ secrets.DOCKERHUB_USERNAME }}/fedora-baseimage:latest
+          DST: ${{ secrets.DOCKERHUB_USERNAME }}/fedora-baseimage:previous
+        run: |
+          if docker buildx imagetools inspect "$SRC" > /dev/null 2>&1; then
+            docker buildx imagetools create -t "$DST" "$SRC"
+          else
+            echo "::notice::$SRC does not exist yet, nothing to keep"
+          fi
 
       - name: Build and push Fedora base
         if: steps.changes.outputs.fedora == 'true' || (github.event_name == 'workflow_dispatch' && inputs.build_fedora)
         uses: docker/build-push-action@v6
         with:
           context: images/systems/fedora-base
+          pull: true
+          no-cache: true
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/fedora-baseimage:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/fedora-baseimage:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/fedora-baseimage:${{ steps.tags.outputs.date }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/fedora-baseimage:${{ steps.tags.outputs.sha }}
+
+      # Keep the image that is about to be replaced as :previous (registry-side
+      # copy, nothing is downloaded). Gives a one-step rollback target.
+      - name: Keep current Wine base as :previous
+        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.workflow == 'true'
+        env:
+          SRC: ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:latest
+          DST: ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:previous
+        run: |
+          if docker buildx imagetools inspect "$SRC" > /dev/null 2>&1; then
+            docker buildx imagetools create -t "$DST" "$SRC"
+          else
+            echo "::notice::$SRC does not exist yet, nothing to keep"
+          fi
 
       - name: Build and push Wine base
         if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.workflow == 'true'
@@ -73,8 +133,26 @@ jobs:
         with:
           context: images/systems/wine-base
           pull: true
+          no-cache: true
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:${{ steps.tags.outputs.date }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:${{ steps.tags.outputs.sha }}
+
+      # Keep the image that is about to be replaced as :previous (registry-side
+      # copy, nothing is downloaded). Gives a one-step rollback target.
+      - name: Keep current ASA as :previous
+        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.asa == 'true' || steps.changes.outputs.workflow == 'true'
+        env:
+          SRC: ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:latest
+          DST: ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:previous
+        run: |
+          if docker buildx imagetools inspect "$SRC" > /dev/null 2>&1; then
+            docker buildx imagetools create -t "$DST" "$SRC"
+          else
+            echo "::notice::$SRC does not exist yet, nothing to keep"
+          fi
 
       - name: Build and push ASA
         if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.asa == 'true' || steps.changes.outputs.workflow == 'true'
@@ -82,5 +160,9 @@ jobs:
         with:
           context: images/games/asa-docker
           pull: true
+          no-cache: true
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:${{ steps.tags.outputs.date }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:${{ steps.tags.outputs.sha }}

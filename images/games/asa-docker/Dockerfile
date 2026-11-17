@@ -1,11 +1,23 @@
 FROM caaarrrlll/wine-baseimage:latest
 
 LABEL org.opencontainers.image.authors="venter109@gmail.com"
-LABEL org.opencontainers.image.source="https://github.com/Caaarrrlll/docker-steamcmd-server"
+LABEL org.opencontainers.image.source="https://github.com/Caaarrrlll/carl-gaming-dockers"
+LABEL org.opencontainers.image.licenses="MIT"
 
 RUN apt-get update && \
 	apt-get -y install --no-install-recommends lib32gcc-s1 lib32stdc++6 lib32z1 screen xvfb winbind && \
 	rm -rf /var/lib/apt/lists/*
+
+# RCON client (gorcon/rcon-cli), used to SaveWorld + DoExit on container stop.
+# Pinned version + SHA-256 (verified against the release's checksum.txt on
+# 2026-11-17); the build fails if the download doesn't match.
+ARG RCON_CLI_VERSION=0.10.3
+ARG RCON_CLI_SHA256=6962a641ebf9a5957bd0cda1b8acf3e34a23686ae709f6c6a14ac3898521a5cc
+RUN wget -qO /tmp/rcon.tgz "https://github.com/gorcon/rcon-cli/releases/download/v${RCON_CLI_VERSION}/rcon-${RCON_CLI_VERSION}-amd64_linux.tar.gz" && \
+	echo "${RCON_CLI_SHA256}  /tmp/rcon.tgz" | sha256sum -c - && \
+	tar -xzf /tmp/rcon.tgz -C /tmp && \
+	install -m 0755 "/tmp/rcon-${RCON_CLI_VERSION}-amd64_linux/rcon" /usr/local/bin/rcon && \
+	rm -rf /tmp/rcon.tgz "/tmp/rcon-${RCON_CLI_VERSION}-amd64_linux"
 
 ENV DATA_DIR="/serverdata" \
 	XDG_RUNTIME_DIR=/tmp
@@ -18,12 +30,15 @@ ENV GAME_ID="2430930" \
 	SERVER_NAME="ASA Docker" \
 	SRV_PWD="Docker" \
 	SRV_ADMIN_PWD="adminDocker" \
-	VALIDATE="" \
+	VALIDATE=false \
 	DEBUG=0 \
-	NTSYNC=0
+	NTSYNC=0 \
+	GB_FORCE_RESTART=0 \
+	LOG_PREFIX="" \
+	AUTOSAVE_MINUTES=15 \
+	RCON_PORT=27020
 
-ENV GAME_PARAMS="" \
-	GAME_PARAMS_EXTRA="-port=7777 -QueryPort=27015 -WinLiveMaxPlayers=20 -server -log -NoBattlEye" \
+ENV GAME_PARAMS_EXTRA="-port=7777 -QueryPort=27015 -WinLiveMaxPlayers=20 -server -log -NoBattlEye" \
 	SRV_CLUSTER_INFO="" \
 	SRV_MOD_IDS=""
 
@@ -32,19 +47,16 @@ ENV UMASK=000 \
 	GID=100 \
 	STEAM_USERNAME="" \
 	STEAM_PASSWRD="" \
-	VALIDATE=0 \
-	USER="steam" \
-	DATA_PERM=770
+	USER="steam"
 
 RUN mkdir $DATA_DIR && \
 	mkdir $STEAMCMD_DIR && \
 	mkdir $SERVER_DIR && \
 	useradd -d $DATA_DIR -s /bin/bash $USER && \
-	chown -R $USER $DATA_DIR && \
-	ulimit -n 2048
+	chown -R $USER $DATA_DIR
 
-ADD /scripts/ /opt/scripts/
-RUN chmod -R $DATA_PERM /opt/scripts/
+COPY scripts/ /opt/scripts/
+RUN chmod -R 750 /opt/scripts/
 
 #Server Start
 ENTRYPOINT ["/opt/scripts/start.sh"]

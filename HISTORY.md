@@ -7,6 +7,94 @@ long-running upgrade finishes, its tracking document is moved under
 `docs/history/2026-11-07-ntsync-wine11.md`) so entries sort chronologically,
 and referenced from this file.
 
+## 2026-11-17 — ASA image cleanup, Unraid template, uncached CI
+
+- `images/games/asa-docker` moved further away from the generic ich777-style
+  SteamCMD container toward an ASA-only image:
+  - Removed the unused `GAME_PARAMS` env. Server flags now come only from
+    `GAME_PARAMS_EXTRA` plus the dedicated map/session/cluster/mod variables.
+  - `VALIDATE` is now declared once, as `false`. Only `true` triggers
+    SteamCMD `validate`.
+  - README rewritten to match the current image.
+- New `GB_FORCE_RESTART` env (default `0`), always passed as
+  `-GBUsageToForceRestart=<value>`. `0` keeps forced restarts disabled.
+- `ulimit`: the no-op `ulimit -n 2048` in the Dockerfile `RUN` was removed,
+  because limits set during a build don't carry into the running container.
+  `start-server.sh` now sets `ulimit -s 8192` before launching Wine. The
+  open-files limit, if ever needed, belongs in the template's Extra
+  Parameters (`--ulimit nofile=…`).
+- **Motivation:** the server was crashing on newer maps (Astraeos, Lost
+  Colony) after sitting idle for a long time. The host and container changes
+  below are all attempts to prevent that; they are not yet confirmed as a fix
+  (tracked in `docs/housekeeping.md`).
+- Host `vm.max_map_count` raised to **1048576**. `start-server.sh` and the docs
+  now recommend that value; the script's hard minimum stays at 256000.
+- Host: a swapfile on the cache drive (`/mnt/cache/swapfile`), enabled by an
+  Unraid User Script on every reboot, together with the map count.
+- Container: `--shm-size=4g` added to the template's Extra Parameters
+  (Docker's default `/dev/shm` is 64 MB).
+- Added `templates/asa-wine.xml`, the Unraid template that is now the
+  **standard for the cluster's ASA servers**, verified against all 13 live
+  templates: privileged (exposes `/dev/ntsync`, so no `--device` flag and a
+  graceful fallback if the module is missing), `--restart=unless-stopped
+  --shm-size=4g`, `NTSYNC=1`, `VALIDATE` as a `false|true` dropdown, shared
+  paths, one shared cluster ID, ports `7760+n` / `27000+n`, base mods, no
+  RCON port.
+- Live templates: a dead-template cleanup removed 26 unused Unraid templates
+  (Scryer and Weaver kept). The 13 ASA templates get aligned to the standard
+  by `align-asa-templates.sh` on the Swap share. That script also fixes Gen1's
+  ports (it used Bjarnheim's 7771/27011), adds NTSYNC and `--shm-size=4g`
+  everywhere, fixes the "Scorched" spelling, removes stale variables, and
+  applies the mod decisions: Lily's Reusables (930436) parked and removed,
+  Auto Dino Wipes (947733) added to Gen1. Tracked in housekeeping item 5.
+- Permissions aligned to Unraid's convention (`nobody:users`, folders 777,
+  files 666 via `UMASK=000`). The recursive `chmod 770` on every start and the
+  `DATA_PERM` env were removed (they made every file executable and produced a
+  mix of `rwxrwx---` and `rw-rw-rw-` files), and the blanket `chown -R` became
+  "only files with the wrong owner", so starting one server no longer
+  rewrites the whole shared install. Existing files get a one-time host
+  clean-up (see the ASA README, "Permissions").
+- Per-server log files: new `LOG_PREFIX` env (blank = map name). Each server
+  writes `ShooterGame/Saved/Logs/<prefix>-ShooterGame.log` via `-LOG=`
+  (verified on the live `ASAAstraeos` server first), so servers sharing the
+  install no longer overwrite one `ShooterGame.log`. The container follows the
+  file with `tail -F` and falls back to `ShooterGame.log` if it never
+  appears.
+- Launch arguments are now built as a bash array, so server names and
+  passwords with spaces or `*` reach ARK intact (`?` is still ARK's separator
+  and can't be used). The literal quotes around `SessionName` were dropped.
+- Rollback tags: CI now also pushes `YYYY-MM-DD` and `sha-<commit>` tags
+  (`trixie-…` for Debian) next to `latest`, so the Unraid template can be
+  pinned back to a known-good image. Before each rebuild, CI also copies the
+  current `latest` to `previous` registry-side, and a manual **Retag image**
+  workflow can point any tag (for example `latest`) at an older build, so
+  builds, tagging and rollbacks all run on GitHub and Docker is no longer
+  needed on the maintainer's PC.
+- Cleanup: image `source` labels point at this monorepo; ASA gained a
+  `licenses` label and `LICENSE`; local build scripts skip Fedora unless
+  `BUILD_FEDORA=1` (matches CI); base image READMEs rewritten; workspace
+  lists `templates/`, `docs/`, `scripts/`; template drops the separate
+  Cluster Files mapping (cluster data lives in the shared install).
+- **Save on stop:** stopping a container used to send ARK a plain `SIGTERM`
+  (no reliable save), and Docker force-killed it after 10 s. Now `start.sh`
+  sends RCON `SaveWorld` then `DoExit`, with `SIGTERM` only as a fallback;
+  the template sets `--stop-timeout=60`. RCON (`RCON_PORT`, 27020, never
+  mapped) and the autosave interval (`AUTOSAVE_MINUTES`, 15) are passed on the
+  launch URL, so they no longer depend on the shared, partly outdated live
+  `GameUserSettings.ini`. RCON client: `gorcon/rcon-cli` 0.10.3, pinned by
+  SHA-256.
+- Small script fixes: `DEBUG` check no longer errors on an empty value,
+  SteamCMD is downloaded over HTTPS, and the Dockerfile uses `COPY`.
+- `ROADMAP.md` added (risk-rated open items); `AGENTS.md` gained a
+  doc-alignment checklist.
+- Decision: automatic crash restarts (ROADMAP item 1) are **parked**. With
+  a shared install, a naive watchdog could run SteamCMD under running servers,
+  so it needs a proper planning session first. Crashes are restarted by hand
+  until then. All of today's changes need a server test before further
+  roadmap work (housekeeping item 7).
+- CI: every image build now uses `pull: true` + `no-cache: true`, so base
+  image and package updates are always picked up.
+
 ## 2026-11-07 — Unraid 7.3.4 upgrade + NTSYNC end-to-end
 
 - Unraid upgraded **7.2.9 (kernel 6.12.90) → 7.3.4 (kernel 6.18.58)**, Docker

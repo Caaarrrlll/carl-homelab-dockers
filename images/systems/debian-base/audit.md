@@ -4,11 +4,11 @@
 
 | Item | Value |
 |---|---|
-| Source repo | `Caaarrrlll/docker-debian-baseimage` |
+| Source repo | `Caaarrrlll/carl-gaming-dockers` (monorepo; imported from `Caaarrrlll/docker-debian-baseimage`) |
 | Docker Hub image | `caaarrrlll/debian-slim-baseimage:trixie-latest` |
 | Base image | `debian:trixie-slim` |
 | Build context | `images/systems/debian-base/` |
-| Last audited | 2026-11-07 |
+| Last audited | 2026-11-17 |
 
 ## Current snapshot
 
@@ -22,6 +22,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
+| 2026-11-17 | _(this change)_ | source label → monorepo; README rewritten; CI rollback tags | `org.opencontainers.image.source` now points at `carl-gaming-dockers`. CI also pushes `trixie-YYYY-MM-DD` and `trixie-sha-<commit>`. |
 | 2026-06-17 | `74c9190` | update docker | |
 | 2026-04-25 | `bf9c21f` | updated readme and finish base image | |
 | 2026-04-25 | `66a9c3b` | Add docker and blank readme | |
@@ -30,9 +31,9 @@
 ## Known issues / follow-ups
 
 - `apt-get -y upgrade` runs at build time, so image contents vary by build date.
-- No `.gitignore` in the repo.
-- Tag `trixie-latest` tracks Debian testing; rebuild and re-audit when trixie
-  becomes stable or packages shift.
+- Trixie (Debian 13) is the current stable release. `trixie-latest` is a
+  moving tag; with CI's `no-cache` builds it picks up point-release updates on
+  every rebuild. Re-audit when Debian 14 (forky) becomes stable.
 
 ## Audit checklist
 

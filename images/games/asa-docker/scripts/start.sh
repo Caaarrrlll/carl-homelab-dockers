@@ -22,12 +22,41 @@ fi
 echo "---Taking ownership of data...---"
 chown -R root:${GID} /opt/scripts
 chmod -R 750 /opt/scripts
-chown -R ${UID}:${GID} ${DATA_DIR}
+# Only touch files whose owner/group is wrong. All cluster containers share
+# /serverdata/serverfiles, so a blanket chown -R would rewrite every file on
+# every start of every server.
+find "${DATA_DIR}" \( ! -user "${UID}" -o ! -group "${GID}" \) -exec chown "${UID}:${GID}" {} +
 
 echo "---Starting...---"
+# Graceful stop: SaveWorld + DoExit over RCON (internal port, never mapped),
+# falling back to SIGTERM. Must finish inside Docker's stop timeout
+# (template: --stop-timeout=60): RCON save <= 30 s, DoExit wait <= 20 s.
+[[ "${RCON_PORT}" =~ ^[0-9]+$ ]] || RCON_PORT=27020
+rcon_cmd() {
+	timeout "$1" rcon -a "127.0.0.1:${RCON_PORT}" -p "${SRV_ADMIN_PWD}" "$2" 2>&1
+}
 term_handler() {
-	kill -SIGTERM $(pidof ArkAscendedServer.exe)
-	tail --pid=$(pidof ArkAscendedServer.exe) -f 2>/dev/null
+	echo "---Stop requested---"
+	if [ -n "$(pidof ArkAscendedServer.exe)" ] && command -v rcon >/dev/null 2>&1; then
+		echo "---Saving world via RCON...---"
+		if OUT="$(rcon_cmd 30 SaveWorld)"; then
+			echo "---SaveWorld: ${OUT}---"
+			echo "---Sending DoExit---"
+			rcon_cmd 5 DoExit >/dev/null || true
+			for _ in $(seq 1 20); do
+				[ -z "$(pidof ArkAscendedServer.exe)" ] && break
+				sleep 1
+			done
+		else
+			echo "---WARNING: RCON SaveWorld failed (${OUT}); stopping without a save---"
+		fi
+	fi
+	if [ -n "$(pidof ArkAscendedServer.exe)" ]; then
+		echo "---Server still running, sending SIGTERM---"
+		kill -SIGTERM $(pidof ArkAscendedServer.exe)
+		tail --pid=$(pidof ArkAscendedServer.exe | awk '{print $1}') -f 2>/dev/null
+	fi
+	echo "---Server stopped---"
 	exit 143;
 }
 

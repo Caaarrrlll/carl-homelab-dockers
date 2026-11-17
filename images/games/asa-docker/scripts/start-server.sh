@@ -8,13 +8,14 @@ else
   echo
   echo "+---ATTENTION---ATTENTION---ATTENTION---ATTENTION---ATTENTION---"
   echo "| Maximum map count per process too low, currently: $CUR_MAX_MAP_COUNT"
-  echo "| Please set the value to at least '256000' on the host and"
+  echo "| Please set the value to at least '256000' (recommended"
+  echo "| '1048576') on the host and"
   echo "| restart the container afterwards."
   echo "|"
   echo "| You can change the value by executing this command on the host"
   echo "| as root:"
   echo
-  echo "echo 265000 > /proc/sys/vm/max_map_count"
+  echo "echo 1048576 > /proc/sys/vm/max_map_count"
   echo
   echo "| You can make that persistent by using a User Script that runs"
   echo "| on startup or putting this line in your go file."
@@ -58,9 +59,12 @@ fi
 
 if [ ! -f ${STEAMCMD_DIR}/steamcmd.sh ]; then
   echo "SteamCMD not found!"
-  wget -q -O ${STEAMCMD_DIR}/steamcmd_linux.tar.gz http://media.steampowered.com/client/steamcmd_linux.tar.gz 
-  tar --directory ${STEAMCMD_DIR} -xvzf /serverdata/steamcmd/steamcmd_linux.tar.gz
-  rm ${STEAMCMD_DIR}/steamcmd_linux.tar.gz
+  if ! wget -q -O "${STEAMCMD_DIR}/steamcmd_linux.tar.gz" https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz; then
+    echo "---Failed to download SteamCMD, putting container into sleep mode!---"
+    sleep infinity
+  fi
+  tar --directory "${STEAMCMD_DIR}" -xvzf "${STEAMCMD_DIR}/steamcmd_linux.tar.gz"
+  rm "${STEAMCMD_DIR}/steamcmd_linux.tar.gz"
 fi
 
 echo "---Update SteamCMD---"
@@ -101,20 +105,56 @@ if [ ! -d ${SERVER_DIR}/WINE64/drive_c/windows ]; then
 else
   echo "---WINE properly set up---"
 fi
-echo "---Prepare Server---"
-chmod -R ${DATA_PERM} ${DATA_DIR}
 echo "---Server ready---"
 
-ARK_RUN_STRING="${MAP}?listen?SessionName=\"${SERVER_NAME}\"?ServerPassword=${SRV_PWD}?ServerAdminPassword=${SRV_ADMIN_PWD}" 
-ARK_RUN_STRING="${ARK_RUN_STRING} ${GAME_PARAMS_EXTRA}"
+# Launch arguments are built as a bash array, so each one reaches Wine as a
+# single argument: no word splitting and no glob expansion.
+# The first argument is ARK's "URL" (map + ?options). It is kept as ONE argument
+# even when SERVER_NAME contains spaces; Wine then wraps it in quotes on the
+# Windows command line, so no literal quotes are needed around the name.
+# Note: '?' is ARK's option separator, so it can't be used inside the server
+# name or passwords.
+# RCON (internal only; used by start.sh to save on stop) and the autosave
+# interval are set here, so they don't depend on the shared
+# GameUserSettings.ini (URL options override the ini).
+if ! [[ "${AUTOSAVE_MINUTES}" =~ ^[0-9]+$ ]] || [ "${AUTOSAVE_MINUTES}" -lt 1 ]; then
+  echo "---WARNING: AUTOSAVE_MINUTES='${AUTOSAVE_MINUTES}' is not a positive number, using 15---"
+  AUTOSAVE_MINUTES=15
+fi
+if ! [[ "${RCON_PORT}" =~ ^[0-9]+$ ]]; then
+  echo "---WARNING: RCON_PORT='${RCON_PORT}' is not a number, using 27020---"
+  RCON_PORT=27020
+fi
+ARK_ARGS=("${MAP}?listen?SessionName=${SERVER_NAME}?ServerPassword=${SRV_PWD}?ServerAdminPassword=${SRV_ADMIN_PWD}?RCONEnabled=True?RCONPort=${RCON_PORT}?AutoSavePeriodMinutes=${AUTOSAVE_MINUTES}")
+# GAME_PARAMS_EXTRA holds space-separated ARK flags; split it on whitespace
+# only (read -a does not glob-expand).
+read -r -a GAME_PARAMS_EXTRA_ARGS <<< "${GAME_PARAMS_EXTRA}"
+ARK_ARGS+=("${GAME_PARAMS_EXTRA_ARGS[@]}")
 if [ "${SRV_CLUSTER_INFO}" != "" ]; then
-  ARK_RUN_STRING="${ARK_RUN_STRING} -clusterid=${SRV_CLUSTER_INFO} -clusterDirOverride=/serverdata/serverfiles/clusterfiles"
+  ARK_ARGS+=("-clusterid=${SRV_CLUSTER_INFO}" "-clusterDirOverride=/serverdata/serverfiles/clusterfiles")
 fi
 if [ "${SRV_MOD_IDS}" != "" ]; then
-  ARK_RUN_STRING="${ARK_RUN_STRING} -mods=${SRV_MOD_IDS}"
+  ARK_ARGS+=("-mods=${SRV_MOD_IDS}")
 fi
 
-if [ ${DEBUG} -eq 1 ]; then
+ARK_ARGS+=("-GBUsageToForceRestart=${GB_FORCE_RESTART}")
+
+# Per-server log file. All cluster servers share Saved/Logs, so each one writes
+# <LOG_PREFIX>-ShooterGame.log instead of the shared ShooterGame.log.
+# LOG_PREFIX blank (default) = use the map name.
+LOG_DIR="${SERVER_DIR}/ShooterGame/Saved/Logs"
+LOG_PREFIX="$(printf '%s' "${LOG_PREFIX}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+if [ -z "${LOG_PREFIX}" ]; then
+  LOG_PREFIX="${MAP}"
+fi
+# Spaces/slashes inside the prefix would split the launch line or point into
+# another folder, so swap anything unusual for '_'.
+LOG_PREFIX="${LOG_PREFIX//[^A-Za-z0-9_.-]/_}"
+LOG_FILE="${LOG_PREFIX}-ShooterGame.log"
+ARK_ARGS+=("-LOG=${LOG_FILE}")
+echo "---Server log file: ${LOG_DIR}/${LOG_FILE}---"
+
+if [ "${DEBUG}" == "1" ]; then
     echo -e "DEBUG: Starting server with the following environment variables:"
     # env | sort
     # custom params
@@ -130,8 +170,10 @@ if [ ${DEBUG} -eq 1 ]; then
     echo "STEAMCMD_DIR: ${STEAMCMD_DIR}"
     echo "Cluster Info: ${SRV_CLUSTER_INFO}"
     echo "MOD IDs: ${SRV_MOD_IDS}"
-    echo "ARK_RUN_STRING: ${ARK_RUN_STRING}"
+    echo "ARK_ARGS (one per line):"
+    printf '  [%s]\n' "${ARK_ARGS[@]}"
     echo "NTSYNC flag: ${NTSYNC} (working: ${NTSYNC_WORKING}, WINENTSYNC: ${WINENTSYNC:-0})"
+    echo "LOG_FILE: ${LOG_DIR}/${LOG_FILE}"
 fi
 
 echo "---Start Server---"
@@ -140,13 +182,20 @@ if [ ! -f ${SERVER_DIR}/ShooterGame/Binaries/Win64/ArkAscendedServer.exe ]; then
   sleep infinity
 else
   cd ${SERVER_DIR}/ShooterGame/Binaries/Win64
-  wine ArkAscendedServer.exe $ARK_RUN_STRING &
+  ulimit -s 8192
+  wine ArkAscendedServer.exe "${ARK_ARGS[@]}" &
   echo "Waiting for logs..."
   ATTEMPT=0
   sleep 2
-  while [ ! -f "${SERVER_DIR}/ShooterGame/Saved/Logs/ShooterGame.log" ]; do
+  while [ ! -f "${LOG_DIR}/${LOG_FILE}" ]; do
     ((ATTEMPT++))
     if [ $ATTEMPT -eq 10 ]; then
+      if [ -f "${LOG_DIR}/ShooterGame.log" ]; then
+        # Safety net: never put a running server to sleep over a log name.
+        echo "---WARNING: ${LOG_FILE} not found after 20 seconds, falling back to ShooterGame.log (may contain another server's output)---"
+        LOG_FILE="ShooterGame.log"
+        break
+      fi
       echo "No log files found after 20 seconds, putting container into sleep mode!"
       sleep infinity
     else
@@ -155,5 +204,7 @@ else
     fi
   done
   # /opt/scripts/start-watchdog.sh &
-  tail -n 9999 -f ${SERVER_DIR}/ShooterGame/Saved/Logs/ShooterGame.log
+  # -F follows the file by name, so the tail survives the server rotating an
+  # old log of the same name to *-backup-<date>.log at start-up.
+  tail -n 9999 -F "${LOG_DIR}/${LOG_FILE}"
 fi

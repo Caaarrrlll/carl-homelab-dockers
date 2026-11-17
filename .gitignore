@@ -21,6 +21,10 @@ desktop.ini
 !.vscode/settings.json
 !.vscode/tasks.json
 
+# Live Unraid template exports, for local comparison only (may contain
+# hostnames or secrets even after redaction; never commit)
+templates/live/
+
 # Build / runtime data
 *.log
 serverdata/

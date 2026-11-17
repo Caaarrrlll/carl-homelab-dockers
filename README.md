@@ -46,6 +46,9 @@ Linux / macOS:
 DOCKERHUB_USER=myuser ./scripts/docker-updater.sh
 ```
 
+The local scripts skip the parked Fedora image unless `BUILD_FEDORA=1` is
+also set.
+
 Or in VS Code, run the **Docker: Build & Push All** task from
 `dockers.code-workspace` after setting `DOCKERHUB_USER` in your environment.
 
@@ -60,7 +63,12 @@ CI uses `.github/workflows/build-images.yml` instead. On a push it rebuilds only
 the affected images, in dependency order: a Debian change rebuilds debian →
 wine → asa, a Wine change rebuilds wine → asa, and a Fedora change rebuilds
 Fedora only. Tag pushes and manual dispatches rebuild debian → wine → asa;
-Fedora is excluded unless you tick `build_fedora` on a manual run. CI expects
+Fedora is excluded unless you tick `build_fedora` on a manual run. Every
+image is pushed as `latest` plus rollback tags `YYYY-MM-DD` and
+`sha-<commit>` (Debian: `trixie-` prefixed), and the image it replaces is kept
+as `previous`. To roll back, run the **Retag image** workflow
+(Actions → Retag image → e.g. `asa-wine`, `previous` → `latest`) and
+force-update the containers in Unraid; no local Docker is needed. CI expects
 the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
 
 ## Layout
@@ -69,6 +77,9 @@ the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
 - `images/games/` — per-game images layered on the system images.
 - `scripts/` — build/push helpers.
 - `docs/` — design notes.
-- `AGENTS.md` — contributor/agent overview.
+- `templates/` — Unraid Docker templates (`asa-wine.xml` = the standard for the ASA cluster servers).
+- `AGENTS.md` — contributor/agent overview, including the doc-alignment checklist.
+- `HISTORY.md` — dated record of significant changes and why they were made.
+- `ROADMAP.md` — known issues and improvements parked for later.
 
 Each image directory has an `audit.md` tracking its snapshot and changes.

@@ -13,7 +13,13 @@ if not defined DOCKERHUB_USER (
 )
 
 call :buildpush "images\systems\debian-base" "%DOCKERHUB_USER%/debian-slim-baseimage:trixie-latest" || goto error
-call :buildpush "images\systems\fedora-base" "%DOCKERHUB_USER%/fedora-baseimage:latest" || goto error
+rem Fedora is parked: only build it when explicitly asked (BUILD_FEDORA=1), same as CI.
+if "%BUILD_FEDORA%"=="1" (
+    call :buildpush "images\systems\fedora-base" "%DOCKERHUB_USER%/fedora-baseimage:latest" || goto error
+) else (
+    echo.
+    echo === Skipping Fedora ^(set BUILD_FEDORA=1 to build it^) ===
+)
 call :buildpush "images\systems\wine-base" "%DOCKERHUB_USER%/wine-baseimage:latest" || goto error
 call :buildpush "images\games\asa-docker" "%DOCKERHUB_USER%/asa-wine:latest" || goto error
 goto end
