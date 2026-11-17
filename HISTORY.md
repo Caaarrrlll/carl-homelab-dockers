@@ -82,7 +82,9 @@ and referenced from this file.
   mapped) and the autosave interval (`AUTOSAVE_MINUTES`, 15) are passed on the
   launch URL, so they no longer depend on the shared, partly outdated live
   `GameUserSettings.ini`. RCON client: `gorcon/rcon-cli` 0.10.3, pinned by
-  SHA-256.
+  SHA-256. The first live stop test made **no** save: the stop trap ended the
+  `su` session before saving, and `pidof` didn't find the Wine process. Fixed
+  the same day (save first, `pgrep -f`, session ended last); re-test pending.
 - Small script fixes: `DEBUG` check no longer errors on an empty value,
   SteamCMD is downloaded over HTTPS, and the Dockerfile uses `COPY`.
 - `ROADMAP.md` added (risk-rated open items); `AGENTS.md` gained a

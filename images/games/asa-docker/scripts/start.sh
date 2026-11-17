@@ -30,37 +30,51 @@ find "${DATA_DIR}" \( ! -user "${UID}" -o ! -group "${GID}" \) -exec chown "${UI
 echo "---Starting...---"
 # Graceful stop: SaveWorld + DoExit over RCON (internal port, never mapped),
 # falling back to SIGTERM. Must finish inside Docker's stop timeout
-# (template: --stop-timeout=60): RCON save <= 30 s, DoExit wait <= 20 s.
+# (template: --stop-timeout=60): save <= 30 s + DoExit 5 s + exit wait <= 15 s
+# + SIGTERM wait <= 5 s = 55 s worst case.
 [[ "${RCON_PORT}" =~ ^[0-9]+$ ]] || RCON_PORT=27020
 rcon_cmd() {
 	timeout "$1" rcon -a "127.0.0.1:${RCON_PORT}" -p "${SRV_ADMIN_PWD}" "$2" 2>&1
 }
+# Find the server by its full command line: under Wine the process name is not
+# reliably "ArkAscendedServer.exe", so pidof can miss it.
+ark_pids() {
+	pgrep -f 'ArkAscendedServer\.exe' || true
+}
 term_handler() {
 	echo "---Stop requested---"
-	if [ -n "$(pidof ArkAscendedServer.exe)" ] && command -v rcon >/dev/null 2>&1; then
+	if [ -n "$(ark_pids)" ] && command -v rcon >/dev/null 2>&1; then
 		echo "---Saving world via RCON...---"
 		if OUT="$(rcon_cmd 30 SaveWorld)"; then
 			echo "---SaveWorld: ${OUT}---"
 			echo "---Sending DoExit---"
 			rcon_cmd 5 DoExit >/dev/null || true
-			for _ in $(seq 1 20); do
-				[ -z "$(pidof ArkAscendedServer.exe)" ] && break
+			for _ in $(seq 1 15); do
+				[ -z "$(ark_pids)" ] && break
 				sleep 1
 			done
 		else
 			echo "---WARNING: RCON SaveWorld failed (${OUT}); stopping without a save---"
 		fi
+	elif [ -z "$(ark_pids)" ]; then
+		echo "---WARNING: server process not found, nothing to save---"
 	fi
-	if [ -n "$(pidof ArkAscendedServer.exe)" ]; then
+	if [ -n "$(ark_pids)" ]; then
 		echo "---Server still running, sending SIGTERM---"
-		kill -SIGTERM $(pidof ArkAscendedServer.exe)
-		tail --pid=$(pidof ArkAscendedServer.exe | awk '{print $1}') -f 2>/dev/null
+		kill -SIGTERM $(ark_pids) 2>/dev/null
+		for _ in $(seq 1 5); do
+			[ -z "$(ark_pids)" ] && break
+			sleep 1
+		done
 	fi
+	# Only now end the su session (start-server.sh and its log tail). Doing this
+	# first, as before, could take the server down before it was saved.
+	kill "${killpid}" 2>/dev/null
 	echo "---Server stopped---"
 	exit 143;
 }
 
-trap 'kill ${!}; term_handler' SIGTERM
+trap 'term_handler' SIGTERM
 su ${USER} -c "/opt/scripts/start-server.sh" &
 killpid="$!"
 while true

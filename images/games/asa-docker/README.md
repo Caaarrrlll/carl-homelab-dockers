@@ -138,10 +138,14 @@ When the container is stopped (Unraid stop, update, array stop, reboot),
 `start.sh` shuts ARK down in this order:
 
 1. RCON `SaveWorld` (up to 30 s). The log shows `---SaveWorld: World Saved---`.
-2. RCON `DoExit`, then up to 20 s for the server to exit.
+2. RCON `DoExit`, then up to 15 s for the server to exit.
 3. Only if the server is still running (or RCON was unreachable, for example
-   during start-up): `SIGTERM`. The log then shows a warning that no save
-   was made.
+   during start-up): `SIGTERM`, then up to 5 s. The log then shows a warning
+   that no save was made.
+
+Worst case is about 55 s, inside the 60 s stop timeout. The server process is
+found by its command line (`pgrep -f ArkAscendedServer.exe`), and the `su`
+session that runs `start-server.sh` is ended only after the save.
 
 The template sets `--stop-timeout=60`. Docker's default is 10 s, after which
 it force-kills the container mid-save. If saves on a large map ever take
