@@ -139,7 +139,7 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
   10/5/5, LiveKit IP/TURN, UID/GID; ExtraParams `--ulimit nofile=65536:65536`
   (gateway) + `--stop-timeout=60`. Parses (19 Config); redaction grep clean.
   AGENTS/README layout, dependency chain and template list updated.
-- [•] 5. CI: build + push `fluxer-aio`; verify green run
+- [✓] 5. CI: build + push `fluxer-aio`; verify green run (CI green 2026-11-18)
   - [✓] 5a. Workflow (2026-11-18): `fluxer` path filter; keep-previous + build
     steps (on debian/fluxer/workflow change, tag, manual); manual input
     `fluxer_only` skips debian -> wine -> asa. Retag workflow lists
@@ -155,9 +155,14 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
     ldd, versions (node 26.13.0, nats 2.14.10, meili 1.53.0, livekit 1.12.0,
     caddy 2.11.9), `caddy validate`, env eval. Fix: self-test skips non
     linux-x64-glibc prebuilds, requires >= 1 checked module.
-  - [•] 5b. Re-dispatch after the self-test fix; waiting for the result. Green = build + self-test passed. On failure: read the
+  - [✓] 5b. Run 44372903547 (`63a3295`, fluxer_only) GREEN 2026-11-18:
+    self-test "all checks passed" (native modules checked: argon2 + sharp
+    linux-x64 glibc); pushed `fluxer-aio:latest`, `:2026-11-18`,
+    `:sha-63a3295` (715 MB compressed, digest sha256:e52e9dc2…417a). Green = build + self-test passed. On failure: read the
     log, fix, push `[skip ci]`, dispatch again.
 - [ ] 6. CI: scheduled check for new Fluxer releases -> bump digests/rebuild
+  (deferred until after the live test in step 8: automate updates only once
+  the image is known to run)
 - [ ] 7. [⏳] Maintainer prep on Unraid: create PG role + DB `fluxer`; Caddy
   site -> `<unraid-ip>:<host-port>`; DNS; router forwards TCP 7881 + UDP 7882
 - [ ] 8. [⏳] First start + live test: text, voice (required), screen share
