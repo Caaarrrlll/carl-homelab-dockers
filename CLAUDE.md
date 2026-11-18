@@ -25,7 +25,7 @@ working with Claude Code in this repo.
 - **No local Docker.** Never try to `docker build`/`push`; image builds are
   verified only by a green GitHub Actions run (`gh run list` / `gh run view`).
 - **No access to the Unraid server.** Anything that must run there (live
-  tests, `align-asa-templates.sh`, `asa-rollout.sh`, reboots) is a `[⏳]`
+  tests, applying template changes to the live containers, reboots) is a `[⏳]`
   tracker step with the exact command for the maintainer. Never mark it `[✓]`
   until they report the result.
 - Python is available as `python` for XML checks, e.g.

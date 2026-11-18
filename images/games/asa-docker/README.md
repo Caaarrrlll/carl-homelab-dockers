@@ -5,20 +5,23 @@ server (Steam app `2430930`) under **Wine 11** on Debian. On every start,
 SteamCMD installs or updates the server and then launches
 `ArkAscendedServer.exe` through Wine.
 
-The image is built for **Unraid**. The standard template for the cluster's
-servers is [`templates/asa-wine.xml`](../../../templates/asa-wine.xml):
-privileged, `--restart=unless-stopped --shm-size=4g`, `NTSYNC=1`, shared
-server files, cluster `mycluster` (placeholder; the real cluster ID is set per server), ports `7760+n` / `27000+n`. Its defaults
-are filled in for The Island; for another map change the name, map, server
-name, both ports (and `-port` / `-QueryPort`) and the mod list.
+The image is built for **Unraid**. A bare template is in
+[`templates/asa-wine.xml`](../../../templates/asa-wine.xml): copy it to
+`/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml` (one copy per
+map) and add it from **Docker → Add Container**. It sets privileged mode,
+`--restart=unless-stopped --shm-size=4g --stop-timeout=60`, shared server
+files, cluster `mycluster` (placeholder) and ports `7760+n` / `27000+n`. Its
+defaults are filled in for The Island; for another map change the name, map,
+server name, both ports (and `-port` / `-QueryPort`) and the mod list, and set
+your own paths, passwords and cluster ID. Set `NTSYNC=1` once the host has
+the `ntsync` module (see below).
 
 Image chain: `debian:trixie-slim` → `caaarrrlll/debian-slim-baseimage` →
 `caaarrrlll/wine-baseimage` (WineHQ stable) → `caaarrrlll/asa-wine`.
 
 ## Host requirements
 
-- **`vm.max_map_count` ≥ 256000; 1048576 recommended (the value used on the
-  target host).** If it is below 256000, the container logs instructions and
+- **`vm.max_map_count` ≥ 256000; 1048576 recommended.** If it is below 256000, the container logs instructions and
   sleeps. Example: `echo 1048576 > /proc/sys/vm/max_map_count`
   - **Why the higher value:** the server was crashing on some of the newer
     maps (Astraeos, Lost Colony) after sitting idle for a long time. Raising
@@ -28,17 +31,15 @@ Image chain: `debian:trixie-slim` → `caaarrrlll/debian-slim-baseimage` →
   (to keep it after a reboot, put this in `/boot/config/go` or a User Script).
 - **NTSYNC (optional, recommended):** needs a host kernel ≥ 6.14 (Unraid 7.3+)
   with `modprobe ntsync` in `/boot/config/go`. The container needs access to
-  `/dev/ntsync`: the cluster template runs **privileged**, which exposes it.
+  `/dev/ntsync`: the template runs **privileged**, which exposes it.
   Without privileged mode, use `--device=/dev/ntsync`, but then the container
   won't start at all if the module isn't loaded.
 
-> **Special note: swapfile and startup script (maintainer's setup)**
+> **Optional: swapfile and startup script**
 >
-> On the target server, a swapfile was created on the cache drive
-> (`/mnt/cache/swapfile`). This only applies if you have a cache drive,
-> which in practice usually means Unraid or Proxmox. The server runs Unraid,
-> and a User Script runs on every reboot to apply both the map count and
-> the swapfile:
+> A swapfile on a fast pool/cache drive (for example `/mnt/cache/swapfile`)
+> gives the servers headroom when memory runs short. On Unraid, a User
+> Script can apply both the map count and the swapfile on every boot:
 >
 > ```bash
 > #!/bin/bash
@@ -87,7 +88,7 @@ The image follows Unraid's appdata convention: owner `nobody:users`
   containers and run once on the host:
 
   ```bash
-  SF=/mnt/cache/appdata/ark-sa-new   # your shared serverfiles path
+  SF=/mnt/user/appdata/asa-serverfiles   # your shared serverfiles path
   chown -R nobody:users "$SF"
   find "$SF" -type d -exec chmod 777 {} +
   find "$SF" -type f -exec chmod 666 {} +
@@ -163,16 +164,17 @@ stops later overwrites your change. On the Unraid host (adjust the source
 path to wherever your master copies live):
 
 ```bash
-LIVE=/mnt/cache/appdata/ark-sa-new/ShooterGame/Saved/Config/WindowsServer
+LIVE=/mnt/user/appdata/asa-serverfiles/ShooterGame/Saved/Config/WindowsServer
+SRC=/path/to/your/master/copies
 for f in GameUserSettings.ini Game.ini; do
   cp -a "$LIVE/$f" "$LIVE/$f.bak-$(date +%F)"
-  cp "/mnt/user/Swap/ASA/$f" "$LIVE/$f"
+  cp "$SRC/$f" "$LIVE/$f"
   chown nobody:users "$LIVE/$f" && chmod 666 "$LIVE/$f"
 done
 ```
 
 To compare before copying, run
-`diff "$LIVE/GameUserSettings.ini" /mnt/user/Swap/ASA/GameUserSettings.ini`.
+`diff "$LIVE/GameUserSettings.ini" "$SRC/GameUserSettings.ini"`.
 The live file may contain passwords, so don't paste that output anywhere.
 
 ## Resource limits (`ulimit` and shared memory)

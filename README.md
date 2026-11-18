@@ -84,7 +84,10 @@ the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
 - `images/games/` — per-game images layered on the system images.
 - `scripts/` — build/push helpers.
 - `docs/` — design notes.
-- `templates/` — Unraid Docker templates (`asa-wine.xml` = the standard for the ASA cluster servers).
+- `templates/` — bare Unraid Docker templates to copy into
+  `/boot/config/plugins/dockerMan/templates-user/` and fill in: `asa-wine.xml`
+  (this repo's ASA image) and `caddy.xml` (Caddy with the Cloudflare DNS
+  module, upstream image). Generic defaults only, no server-specific details.
 - `AGENTS.md` — contributor/agent overview, including the doc-alignment checklist.
 - `CLAUDE.md` — Claude Code entry point; imports `AGENTS.md` and adds local-environment notes.
 - `HISTORY.md` — dated record of significant changes and why they were made.

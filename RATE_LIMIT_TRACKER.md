@@ -29,8 +29,16 @@ image names do not change; no container needs recreating.
   `E:\Code\carl-gaming-dockers` → `E:\Code\carl-homelab-dockers`, copy
   `C:\Users\Carl\.claude\projects\e--Code-carl-gaming-dockers\memory\` to
   `...\e--Code-carl-homelab-dockers\memory\`
-- [⏳] 5. Unraid live templates (maintainer): replace the old name in
-  `/boot/config/plugins/dockerMan/templates-user/my-*.xml` (command in step 3's reply)
+- [✗] 5. Unraid live templates: dropped. Maintainer moved their live
+  templates out of this repo; templates here are now bare, generic copies.
+- [✓] 5a. Bare templates, no server-specific references — touched:
+  templates/asa-wine.xml, templates/my-Caddy.xml → templates/caddy.xml,
+  README.md, AGENTS.md, CLAUDE.md, images/games/asa-docker/{README,audit}.md, HISTORY.md
+  - Archives / dated change-log rows left as historical record.
+- [•] 5b. Verify, commit `[skip ci]`, push
+  - Verified: `git diff --check` clean; both templates parse; grep of
+    templates and current docs finds no hostnames/shares/real paths/secrets.
+  - [⏳] Commit + push: waiting on the maintainer's go-ahead.
 - [ ] 6. Close: move this section to `RATE_LIMIT_TRACKER_HISTORY.md`
 
 Previous (2026-11-18): ROADMAP item 15, GameAnalytics log flood

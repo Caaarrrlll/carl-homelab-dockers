@@ -18,6 +18,14 @@ and referenced from this file.
   `org.opencontainers.image.source` labels and the template's
   Support/Project/TemplateURL/Icon now use the new name; the label change was
   committed with `[skip ci]` and ships with the next real build.
+- **Templates made bare.** The maintainer's live templates now live outside
+  this repo, and server-specific details (share names, real paths, cluster
+  mod list, helper-script references) should not be published here.
+  `templates/` now holds generic templates to copy into Unraid:
+  `asa-wine.xml` (generic defaults, `NTSYNC=0`, no mods) and a new
+  `caddy.xml` for `caddybuilds/caddy-cloudflare` (Caddy replaces Nginx Proxy
+  Manager; upstream image, nothing built here). Dated history entries and
+  archives keep their original wording as a record.
 
 - **Problem:** every ASA server logged `SQLITE3 FINALIZE ERROR: database disk
   image is malformed` and `Database too large. Event has been blocked.` every

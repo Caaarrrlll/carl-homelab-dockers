@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <!--
-  Unraid template for caaarrrlll/asa-wine (images/games/asa-docker): the
-  standard for the maintainer's ASA cluster servers on Unraid. It matches
-  the 13 live templates after align-asa-templates.sh (2026-11-17). Defaults
-  are filled in for The Island (port slot 0); for another map change Name,
-  Map, Server Name, both ports + Extra Game Parameters and Mod IDs.
+  Bare Unraid template for caaarrrlll/asa-wine (images/games/asa-docker).
+  Copy it to /boot/config/plugins/dockerMan/templates-user/ as
+  my-<Name>.xml (one copy per map), then add it from Docker > Add Container.
+  Defaults are filled in for The Island (port slot 0); for another map change
+  Name, Map, Server Name, both ports + Extra Game Parameters and Mod IDs, and
+  set your own paths, passwords and Cluster ID.
 -->
 <Container version="2">
   <Name>ASATheIsland</Name>
@@ -18,7 +19,7 @@
   <Project>https://github.com/Caaarrrlll/carl-homelab-dockers</Project>
   <Overview>ARK: Survival Ascended dedicated server (Steam app 2430930) running under Wine 11 on Debian. SteamCMD installs/updates the server on every start.[br][br]
 One container per map, all sharing the same Server Files folder (one download per game update) and cluster. Stop all ASA servers before restarting for a game update, then start them one at a time.[br][br]
-Ports: game 7760+n / query 27000+n, one slot per map (see Mods.txt on the Swap share). Set both port mappings AND -port/-QueryPort in Extra Game Parameters.[br][br]
+Ports: game 7760+n / query 27000+n, one slot per map (n = 0, 1, 2, ...). Set both port mappings AND -port/-QueryPort in Extra Game Parameters.[br][br]
 Host requirements:[br]
 - vm.max_map_count at least 256000; 1048576 recommended (the container sleeps and logs instructions if it is below 256000).[br]
 - NTSYNC=1: Unraid 7.3+ (kernel 6.14+) with 'modprobe ntsync' in /boot/config/go. Privileged mode exposes /dev/ntsync, so no --device flag is needed; if the module is missing the server falls back to ESync/FSync instead of failing to start.[br][br]
@@ -41,7 +42,7 @@ WARNING: DEBUG=1 prints passwords to the container log.</Overview>
 
   <!-- Paths: every ASA server shares these -->
   <Config Name="SteamCMD" Target="/serverdata/steamcmd" Default="/mnt/user/appdata/steamcmd" Mode="rw" Description="SteamCMD install location (shared by all ASA servers)." Type="Path" Display="advanced" Required="true" Mask="false">/mnt/user/appdata/steamcmd</Config>
-  <Config Name="Server Files" Target="/serverdata/serverfiles" Default="/mnt/cache/appdata/ark-sa-new" Mode="rw" Description="ARK server files, Wine prefix (WINE64), saves, logs and cluster data. Shared by all ASA servers." Type="Path" Display="always" Required="true" Mask="false">/mnt/cache/appdata/ark-sa-new</Config>
+  <Config Name="Server Files" Target="/serverdata/serverfiles" Default="/mnt/user/appdata/asa-serverfiles" Mode="rw" Description="ARK server files, Wine prefix (WINE64), saves, logs and cluster data. Shared by all ASA servers (a cache/pool path is recommended)." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/asa-serverfiles</Config>
 
   <!-- Ports: game 7760+n / query 27000+n; keep in sync with -port / -QueryPort below -->
   <Config Name="Game Port" Target="7760" Default="7760" Mode="udp" Description="Game port, 7760+n (also -port= in Extra Game Parameters)." Type="Port" Display="always" Required="true" Mask="false">7760</Config>
@@ -53,7 +54,7 @@ WARNING: DEBUG=1 prints passwords to the container log.</Overview>
   <Config Name="Server Password" Target="SRV_PWD" Default="" Mode="" Description="Password players need to join. No '?'." Type="Variable" Display="always" Required="false" Mask="true"></Config>
   <Config Name="Admin Password" Target="SRV_ADMIN_PWD" Default="" Mode="" Description="Server admin password. No '?'." Type="Variable" Display="always" Required="true" Mask="true"></Config>
   <Config Name="Extra Game Parameters" Target="GAME_PARAMS_EXTRA" Default="-port=7760 -QueryPort=27000 -WinLiveMaxPlayers=20 -server -log -NoBattlEye" Mode="" Description="ARK server flags only. -port / -QueryPort must match the port mappings above. Do not add -LOG=, -mods=, -clusterid= or -GBUsageToForceRestart= here; use their own fields." Type="Variable" Display="always" Required="true" Mask="false">-port=7760 -QueryPort=27000 -WinLiveMaxPlayers=20 -server -log -NoBattlEye</Config>
-  <Config Name="Mod IDs" Target="SRV_MOD_IDS" Default="1188679,942024,929420,934401,1299726,947733" Mode="" Description="Comma-separated CurseForge mod IDs (passed as -mods=). Default = the cluster's base mods; map-specific lists are in Mods.txt on the Swap share." Type="Variable" Display="always" Required="false" Mask="false">1188679,942024,929420,934401,1299726,947733</Config>
+  <Config Name="Mod IDs" Target="SRV_MOD_IDS" Default="" Mode="" Description="Comma-separated CurseForge mod IDs (passed as -mods=). Use the same base list on every server in a cluster. Empty = no mods." Type="Variable" Display="always" Required="false" Mask="false"></Config>
   <Config Name="Cluster ID" Target="SRV_CLUSTER_INFO" Default="mycluster" Mode="" Description="Cluster ID (passed as -clusterid=, with -clusterDirOverride=/serverdata/serverfiles/clusterfiles inside the shared server files). Same on every server in the cluster; empty = standalone." Type="Variable" Display="always" Required="false" Mask="false">mycluster</Config>
   <Config Name="Force Restart Usage" Target="GB_FORCE_RESTART" Default="0" Mode="" Description="Passed as -GBUsageToForceRestart=. 0 disables the forced restart." Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
   <Config Name="Autosave (minutes)" Target="AUTOSAVE_MINUTES" Default="15" Mode="" Description="World autosave interval in minutes (passed as ?AutoSavePeriodMinutes=, overrides GameUserSettings.ini). Also the most progress a crash can lose." Type="Variable" Display="always" Required="false" Mask="false">15</Config>
@@ -61,7 +62,7 @@ WARNING: DEBUG=1 prints passwords to the container log.</Overview>
   <Config Name="Log Prefix" Target="LOG_PREFIX" Default="" Mode="" Description="Prefix for this server's log file: ShooterGame/Saved/Logs/&lt;prefix&gt;-ShooterGame.log (passed to the server as -LOG=). Spaces at the start/end are trimmed; leave blank to use the map name, e.g. TheIsland_WP-ShooterGame.log. Set it only when two servers run the same map." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
 
   <!-- Runtime toggles -->
-  <Config Name="NTSYNC" Target="NTSYNC" Default="0" Mode="" Description="1 = use the ntsync driver for Wine (needs /dev/ntsync on the host; privileged mode exposes it). Falls back to ESync/FSync with a log warning if it is missing." Type="Variable" Display="always" Required="false" Mask="false">1</Config>
+  <Config Name="NTSYNC" Target="NTSYNC" Default="0" Mode="" Description="1 = use the ntsync driver for Wine (needs /dev/ntsync on the host; privileged mode exposes it). Falls back to ESync/FSync with a log warning if it is missing. Recommended: 1 once the host has the ntsync module." Type="Variable" Display="always" Required="false" Mask="false">0</Config>
   <Config Name="Validate" Target="VALIDATE" Default="false|true" Mode="" Description="true = validate the game files with SteamCMD on start (slow; the install is shared, so only with all other ASA servers stopped)." Type="Variable" Display="advanced" Required="true" Mask="false">false</Config>
   <Config Name="Debug" Target="DEBUG" Default="0" Mode="" Description="1 = print troubleshooting info, INCLUDING PASSWORDS, to the log." Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
 

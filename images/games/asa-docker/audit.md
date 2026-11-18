@@ -25,8 +25,9 @@
 - Server flags come only from `GAME_PARAMS_EXTRA` plus the
   map/session/cluster/mod/restart variables. There is no generic `GAME_PARAMS`.
 - `VALIDATE` is a boolean string: only `true` runs SteamCMD `validate`.
-- Unraid template: `templates/asa-wine.xml`, the cluster standard (verified
-  against the 13 live templates 2026-11-17).
+- Unraid template: `templates/asa-wine.xml`, a bare template with generic
+  defaults (`NTSYNC=0`, no mods, `/mnt/user/appdata/asa-serverfiles`); the
+  maintainer's live templates are kept outside this repo.
 - `GB_FORCE_RESTART` is always passed to the server as
   `-GBUsageToForceRestart=${GB_FORCE_RESTART}`; `0` (default) disables the
   forced restart.
@@ -53,7 +54,8 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
-| 2026-11-18 | _(this change)_ | source label → `carl-homelab-dockers` | Repo renamed on GitHub; `org.opencontainers.image.source` and the template URLs follow. Label-only, committed with `[skip ci]`: ships with the next real build (old URL redirects until then). |
+| 2026-11-18 | _(this change)_ | template: bare, generic defaults | `templates/asa-wine.xml` no longer mirrors the maintainer's server: no share/script references, Server Files default `/mnt/user/appdata/asa-serverfiles`, Mod IDs empty, `NTSYNC` value `0` (matches the image default). README host-side examples use placeholder paths. No image change. |
+| 2026-11-18 | `6a5d2ee` | source label → `carl-homelab-dockers` | Repo renamed on GitHub; `org.opencontainers.image.source` and the template URLs follow. Label-only, committed with `[skip ci]`: ships with the next real build (old URL redirects until then). |
 | 2026-11-18 | `2d07cbf` | template: per-container tmpfs over GameAnalytics | Shared `WINE64/.../AppData/Local/GameAnalytics/<key>/ga.sqlite3` (6.7 MB) was corrupt + full (`malformed`, `db_too_large`), flooding every log. Template Extra Parameters add `--tmpfs /serverdata/serverfiles/WINE64/drive_c/users/steam/AppData/Local/GameAnalytics:rw,size=64m,mode=1777`; no image change. Rolled out with `asa-rollout.sh` + `align-asa-templates.sh` (Swap share). |
 | 2026-11-17 | `6b930a6`, `beb0b6b` | add `GB_FORCE_RESTART` env flag; move `ulimit`; CI `no-cache` | `GB_FORCE_RESTART` (default `0`) passed as `-GBUsageToForceRestart=<value>`. Removed no-op `ulimit -n 2048` from the Dockerfile `RUN` (build-time limits don't persist); `start-server.sh` now sets `ulimit -s 8192` before `wine`. CI builds now use `pull: true` + `no-cache: true` for all images. Removed the unused `GAME_PARAMS` env and the duplicate `VALIDATE` declaration (now a single `VALIDATE=false`). README rewritten for the current ASA-only image (variables, volumes/ports, `ulimit` notes). Added placeholder Unraid template `templates/asa-wine.xml`. `max_map_count` warning now recommends `1048576` (matches host); minimum check stays `256000`. Template Extra Parameters now include `--shm-size=4g`; README documents it plus the host swapfile/User Script. These changes are attempts to stop idle crashes on Astraeos / Lost Colony. Permissions: removed `DATA_PERM` and the recursive `chmod 770` in `start-server.sh` (it made every file executable and mixed with the `UMASK=000` files ARK creates); `start.sh` now only `chown`s mismatched files instead of `chown -R` on the shared install; scripts are `chmod 750` at build time. New `LOG_PREFIX` env (blank = map name): adds `-LOG=<prefix>-ShooterGame.log` (verified on ASA 2026-11-17), waits for/tails that file with `tail -F` (survives log rotation), and falls back to `ShooterGame.log` if it never appears. Launch arguments built as a bash array (`ARK_ARGS`) instead of an unquoted string; literal quotes around `SessionName` dropped (the URL is one argument, Wine quotes it). Labels: `source` → monorepo, added `licenses=MIT` + `LICENSE`. CI rollback tags `YYYY-MM-DD` / `sha-<commit>`. Template: dropped the separate Cluster Files mapping, added rollback note, then aligned to the live cluster standard (privileged, `--restart=unless-stopped --shm-size=4g`, shared paths, ports 7760/27000, the shared cluster ID, base mods). Small fixes (ROADMAP item 10): `DEBUG` check is now a string compare (no error when empty/non-numeric); SteamCMD downloaded over HTTPS from `steamcdn-a.akamaihd.net`, with a clear message if the download fails, and paths use `STEAMCMD_DIR`; Dockerfile uses `COPY scripts/` instead of `ADD`. Save on stop (ROADMAP item 3): added `rcon` (gorcon/rcon-cli 0.10.3, SHA-256 verified at build), new `AUTOSAVE_MINUTES` (15) and `RCON_PORT` (27020) envs passed on the launch URL, `term_handler` now does SaveWorld → DoExit → SIGTERM fallback; template `--stop-timeout=60`. Fix after the first live stop test (2026-11-17, no save made): the trap killed the `su` session before `term_handler` ran, and `pidof ArkAscendedServer.exe` is unreliable under Wine. Now the trap runs `term_handler` first, the server is found with `pgrep -f`, the session is ended last, and waits are 30 + 5 + 15 + 5 s (≤ 55 s). Re-test passed on the live server (World Saved before stop). |
 | 2026-11-07 | `29ef23f` | add `NTSYNC` env flag | `start-server.sh` checks `/dev/ntsync` when `NTSYNC=1`, exports `WINENTSYNC=1`, warns and falls back to ESync/FSync when the device is missing; default `0` (disabled). Host must `modprobe ntsync` and pass `--device=/dev/ntsync`. |
@@ -94,8 +96,6 @@
   passed to the container. Without it the container still starts and logs a
   fallback warning — by design, since NTSYNC is an optional performance
   feature.
-- Live templates must be brought in line with `templates/asa-wine.xml` via
-  `align-asa-templates.sh` (housekeeping item 5) and recreated.
 
 ## Audit checklist
 

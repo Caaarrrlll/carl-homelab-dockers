@@ -66,11 +66,16 @@ Supporting files:
 - `RATE_LIMIT_TRACKER.md` — live, resumable checklist of the current
   multi-step task.
 - `RATE_LIMIT_TRACKER_HISTORY.md` — archive of completed task checklists.
-- `templates/asa-wine.xml` — Unraid Docker template for `caaarrrlll/asa-wine`:
-  the **standard for the maintainer's ASA cluster** (verified against the 13
-  live templates on 2026-11-17; defaults filled in for The Island, port slot
-  0). Keep it in sync when env vars, ports, volumes or Extra Parameters
-  change, and apply the same change to the live templates. Not watched by CI.
+- `templates/` — **bare** Unraid Docker templates, meant to be copied into
+  `/boot/config/plugins/dockerMan/templates-user/` and filled in. They hold
+  generic defaults only: no hostnames, share names, real paths, cluster IDs,
+  passwords or other details of the maintainer's server (their live
+  templates are kept outside this repo). Not watched by CI.
+  - `asa-wine.xml` — for `caaarrrlll/asa-wine` (defaults for The Island,
+    port slot 0). Keep it in sync when env vars, ports, volumes or Extra
+    Parameters change; the maintainer applies the change to their own copies.
+  - `caddy.xml` — Caddy with the Cloudflare DNS module
+    (`caddybuilds/caddy-cloudflare`, third-party; no image is built here).
 - `HISTORY.md` — consolidated, dated record of significant decisions and
   upgrades.
 - `docs/history/` — completed long-running-upgrade working docs, kept for
@@ -245,7 +250,7 @@ tree (or the live server) and passed. Record what was run.
 |---|---|
 | Any change | `git diff --check` |
 | Shell script (`*.sh`) | `bash -n <file>`; for changed logic, a stubbed simulation of the affected paths (as done for the stop handler) |
-| Unraid template / XML | Parse it (Python `xml.etree`, or `php` on Unraid); for the live templates, a dry run of `align-asa-templates.sh` on the redacted copies |
+| Unraid template / XML | Parse it (Python `xml.etree`, or `php` on Unraid); grep it for server-specific values (hostnames, share names, real paths, IDs, secrets) |
 | Workflow YAML | Parse it and re-read the `if:` conditions / path filters it affects |
 | Dockerfile / image script | Only CI can build (no local Docker): the build is verified when the Actions run is green; runtime behaviour only when the maintainer has tested it on Unraid |
 | Docs / tracker only | `git diff --check` |

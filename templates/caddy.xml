@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!--
+  Bare Unraid template for Caddy with the Cloudflare DNS module
+  (caddybuilds/caddy-cloudflare, a third-party image; nothing is built in
+  this repo). Copy it to /boot/config/plugins/dockerMan/templates-user/
+  as my-Caddy.xml, then add it from Docker > Add Container. Adjust host
+  ports and paths to your setup.
+-->
+<Container version="2">
+  <Name>Caddy</Name>
+  <Repository>caddybuilds/caddy-cloudflare:2-alpine</Repository>
+  <Registry>https://hub.docker.com/r/caddybuilds/caddy-cloudflare</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://caddy.community/</Support>
+  <Project>https://caddyserver.com/</Project>
+  <Overview>Caddy 2 web server and reverse proxy (official Caddy plus the caddy-dns/cloudflare module, built by CaddyBuilds) with automatic HTTPS. Certificates are proven through Cloudflare DNS, so port 80 is not needed for certificates.[br][br]
+Unraid's own web UI uses ports 80/443, so the defaults map Caddy to host ports 1880 (HTTP) and 18443 (HTTPS); forward external 80/443 on your router to those.[br][br]
+The Caddyfile lives in the Caddyfile folder; certificates in the Data folder (back this up). Apply Caddyfile changes without downtime with: docker exec -w /etc/caddy Caddy caddy reload</Overview>
+  <Category>Network:Web Network:Proxy Tools:Utilities</Category>
+  <WebUI/>
+  <TemplateURL/>
+  <Icon>https://cdn.jsdelivr.net/gh/selfhst/icons/png/caddy.png</Icon>
+  <ExtraParams>--restart=unless-stopped --env-file=/mnt/user/appdata/secrets/cloudflare.env</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>Create the Caddyfile (in the Caddyfile folder below) BEFORE the first start. Needs an env file at the path in Extra Parameters (chmod 600) containing CADDY_CF_API_TOKEN=&lt;scoped Cloudflare API token with Zone:Read + DNS:Edit&gt;; reference it in the Caddyfile as {env.CADDY_CF_API_TOKEN}. The env file is read when the container is created: after changing it, use Edit then Apply (or Force Update), not just Restart. Stop any other reverse proxy that holds the same host ports first.</Requires>
+  <Config Name="HTTP Port" Target="80" Default="1880" Mode="tcp" Description="Host port the router forwards external port 80 to. Used for HTTP-&gt;HTTPS redirects (and Let's Encrypt HTTP challenges, if ever used)." Type="Port" Display="always" Required="true" Mask="false">1880</Config>
+  <Config Name="HTTPS Port" Target="443" Default="18443" Mode="tcp" Description="Host port the router forwards external port 443 to." Type="Port" Display="always" Required="true" Mask="false">18443</Config>
+  <Config Name="HTTPS Port (HTTP/3)" Target="443" Default="18443" Mode="udp" Description="Optional: HTTP/3 (QUIC). Only useful if the router also forwards UDP 443 to this port." Type="Port" Display="always" Required="false" Mask="false">18443</Config>
+  <Config Name="Caddyfile folder" Target="/etc/caddy" Default="/mnt/user/appdata/caddy/etc" Mode="rw" Description="Folder that holds the Caddyfile. Mounted as a folder (not a single file) so edits are seen without recreating the container." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/caddy/etc</Config>
+  <Config Name="Data (certificates)" Target="/data" Default="/mnt/user/appdata/caddy/data" Mode="rw" Description="Certificates, ACME account and keys. Back this up; losing it means re-requesting every certificate." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/caddy/data</Config>
+  <Config Name="Config (autosave)" Target="/config" Default="/mnt/user/appdata/caddy/config" Mode="rw" Description="Caddy's autosaved running config." Type="Path" Display="advanced" Required="true" Mask="false">/mnt/user/appdata/caddy/config</Config>
+</Container>

@@ -23,7 +23,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
-| 2026-11-18 | _(this change)_ | source label → `carl-homelab-dockers` | Repo renamed on GitHub; `org.opencontainers.image.source` and the template URLs follow. Label-only, committed with `[skip ci]`: ships with the next real build (old URL redirects until then). |
+| 2026-11-18 | `6a5d2ee` | source label → `carl-homelab-dockers` | Repo renamed on GitHub; `org.opencontainers.image.source` and the template URLs follow. Label-only, committed with `[skip ci]`: ships with the next real build (old URL redirects until then). |
 | 2026-11-17 | `6b930a6` | source label → monorepo; README rewritten; CI rollback tags | `org.opencontainers.image.source` now points at `carl-gaming-dockers`. README documents WineHQ stable / Wine 11 / NTSYNC and fixes the reversed link. CI also pushes `YYYY-MM-DD` and `sha-<commit>`. |
 | 2026-11-07 | `29ef23f` | switch to WineHQ `winehq-stable` | Debian's packaged Wine is `10.0` (confirmed in the running container), which predates NTSYNC support (Wine 10.4+/11). WineHQ stable is Wine 11.0 with NTSYNC highlights. Also fixes the missing apt cache cleanup. |
 | 2026-05-06 | `cf66d87` | newer wine | |
