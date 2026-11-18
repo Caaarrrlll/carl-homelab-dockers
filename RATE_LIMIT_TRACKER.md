@@ -18,5 +18,4 @@ None. Last completed (2026-11-18): ROADMAP item 15, GameAnalytics log flood
 
 Next (maintainer to confirm): ROADMAP item 14, Wine vs Proton / Proton-GE
 research (now P1). Item 9 stays blocked until item 14's research is done.
-Optional clean-up on Unraid: delete
-`/mnt/cache/appdata/ark-sa-new/WINE64/drive_c/users/steam/AppData/Local/GameAnalytics.bak-*`.
+(Old `GameAnalytics.bak-*` folder and `ga-find.txt` removed by the maintainer, 2026-11-18.)
