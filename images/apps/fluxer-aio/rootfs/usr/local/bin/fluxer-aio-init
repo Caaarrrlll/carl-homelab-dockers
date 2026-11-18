@@ -1,0 +1,224 @@
+#!/bin/bash
+# fluxer-aio-init: s6 oneshot, runs as root before every Fluxer service.
+#
+#  1. Checks the settings the operator must provide (domain, Postgres, Redis).
+#  2. Applies fluxer-aio's homelab defaults for unset tuning settings.
+#  3. Creates the runtime user (UID/GID) and the /data layout.
+#  4. Loads secrets from /data/secrets.env, generating any that are missing
+#     (upstream's documented openssl commands), and hands every value to the
+#     services through s6's container environment.
+#  5. Writes the NATS and LiveKit config files.
+#
+# Secrets are generated ONCE and kept in /data/secrets.env (mode 0600).
+# Fluxer says several of them must never change after the first start, so
+# back that file up with the rest of /data. A value set in the container's
+# environment always wins over the file.
+
+set -euo pipefail
+umask 077
+
+log() { echo "[fluxer-aio-init] $*"; }
+die() { echo "[fluxer-aio-init] ERROR: $*" >&2; exit 1; }
+
+DATA_DIR="${DATA_DIR:-/data}"
+SECRETS="$DATA_DIR/secrets.env"
+CONTENV=/run/s6/container_environment
+RUNDIR=/run/fluxer-aio
+# $UID is special in bash (read-only; only an inherited value survives), so
+# read the container's UID/GID settings from s6's copy of the environment
+# rather than relying on what the shell imported.
+UID_="$(cat "$CONTENV/UID" 2>/dev/null || true)"
+UID_="${UID_:-99}"
+GID_="$(cat "$CONTENV/GID" 2>/dev/null || true)"
+GID_="${GID_:-${GID:-100}}"
+
+# Persist a value for every service (s6 with-contenv reads this directory).
+set_env() {
+	printf '%s' "$2" >"$CONTENV/$1"
+	export "$1=$2"
+}
+
+# --- 1. Required settings ------------------------------------------------------
+missing=()
+for v in FLUXER_DOMAIN FLUXER_POSTGRES_HOST POSTGRES_PASSWORD FLUXER_KV_URL; do
+	[ -n "${!v:-}" ] || missing+=("$v")
+done
+if [ "${#missing[@]}" -gt 0 ]; then
+	die "required settings are empty: ${missing[*]} (see the template / README \"Settings\")"
+fi
+case "$FLUXER_KV_URL" in
+	redis://* | rediss://*) ;;
+	*) die "FLUXER_KV_URL must start with redis:// or rediss:// (got something else)" ;;
+esac
+case "$UID_$GID_" in
+	*[!0-9]*) die "UID and GID must be numbers" ;;
+esac
+
+# --- 2. Homelab defaults (only when unset) ---------------------------------------
+# Upstream sizes its connection pools for a dedicated Postgres (api 25, worker
+# 25, users 20, messages 20). fluxer-aio shares the operator's Postgres, and
+# the worker runs inside the api process, so the defaults are smaller.
+while IFS='=' read -r k v; do
+	[ -n "${!k:-}" ] || set_env "$k" "$v"
+done <<'EOF'
+FLUXER_API_POSTGRES_MAX_CONNECTIONS=10
+FLUXER_USERS_POSTGRES_MAX_CONNECTIONS=5
+FLUXER_MESSAGES_POSTGRES_MAX_CONNECTIONS=5
+FLUXER_S3_ACCESS_KEY=fluxer
+LIVEKIT_API_KEY=fluxer
+EOF
+
+# --- 3. User and /data layout ------------------------------------------------------
+if getent group "$GID_" >/dev/null; then
+	group="$(getent group "$GID_" | cut -d: -f1)"
+else
+	groupadd -g "$GID_" fluxer
+	group=fluxer
+fi
+if id fluxer >/dev/null 2>&1; then
+	[ "$(id -u fluxer)" = "$UID_" ] || usermod -o -u "$UID_" fluxer
+	usermod -g "$group" fluxer
+else
+	useradd -o -u "$UID_" -g "$group" -d "$DATA_DIR/home" -M -s /usr/sbin/nologin fluxer
+fi
+
+install -d -m 0755 "$RUNDIR"
+install -d -m 0700 -o fluxer -g "$group" /run/fluxer
+for d in "$DATA_DIR" "$DATA_DIR/home" "$DATA_DIR/nats" "$DATA_DIR/meilisearch" \
+	"$DATA_DIR/caddy" "$DATA_DIR/tmp" "$DATA_DIR/tmp/media-proxy" "$DATA_DIR/objects"; do
+	install -d -m 0750 "$d"
+	[ "$(stat -c '%u:%g' "$d")" = "$UID_:$GID_" ] || chown "$UID_:$GID_" "$d"
+done
+# Filesystem object store layout (same as upstream's objects-init).
+for d in .staging .staging/tmp .staging/multipart .staging/trash .meta; do
+	install -d -m 2770 -o "$UID_" -g "$GID_" "$DATA_DIR/objects/$d"
+done
+if [ ! -e "$DATA_DIR/objects/.layout" ]; then
+	printf '{"v":1}' >"$DATA_DIR/objects/.layout.tmp"
+	chown "$UID_:$GID_" "$DATA_DIR/objects/.layout.tmp"
+	chmod 0660 "$DATA_DIR/objects/.layout.tmp"
+	mv "$DATA_DIR/objects/.layout.tmp" "$DATA_DIR/objects/.layout"
+fi
+# Upstream images own their app folders; the gateway writes next to its release.
+for d in /opt/fluxer_gateway /usr/src/app; do
+	[ "$(stat -c '%u' "$d")" = "$UID_" ] || chown -R "$UID_:$GID_" "$d"
+done
+# A wrong owner deeper in /data (e.g. after changing UID) is fixed only when
+# the top level is wrong, to keep restarts fast on large object stores.
+for d in "$DATA_DIR/objects" "$DATA_DIR/nats" "$DATA_DIR/meilisearch"; do
+	[ "$(stat -c '%u' "$d/.")" = "$UID_" ] || chown -R "$UID_:$GID_" "$d"
+done
+
+# --- 4. Secrets ----------------------------------------------------------------------
+gen_hex() { openssl rand -hex 32; }
+gen_b64() { openssl rand -base64 32 | tr -d '\n'; }
+gen_rsa() {
+	openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -outform DER 2>/dev/null | base64 | tr -d '\n'
+}
+gen_vapid() { # prints "public private" (upstream .env.example commands)
+	local pem
+	pem="$(mktemp)"
+	openssl ecparam -name prime256v1 -genkey -noout -out "$pem" 2>/dev/null
+	printf '%s %s\n' \
+		"$(openssl ec -in "$pem" -pubout -outform DER 2>/dev/null | tail -c 65 | base64 | tr '/+' '_-' | tr -d '=\n')" \
+		"$(openssl ec -in "$pem" -outform DER 2>/dev/null | tail -c +8 | head -c 32 | base64 | tr '/+' '_-' | tr -d '=\n')"
+	rm -f "$pem"
+}
+
+touch "$SECRETS"
+chown root:root "$SECRETS"
+chmod 0600 "$SECRETS"
+
+stored() { # value of $1 in the secrets file, or empty
+	local line
+	line="$(grep -m1 "^$1=" "$SECRETS" || true)"
+	printf '%s' "${line#*=}"
+}
+
+secret() { # secret NAME GENERATOR
+	local name="$1" gen="$2" from_file value
+	from_file="$(stored "$name")"
+	if [ -n "${!name:-}" ]; then
+		value="${!name}"
+		if [ -n "$from_file" ] && [ "$from_file" != "$value" ]; then
+			log "WARNING: $name from the container settings differs from $SECRETS; using the container setting"
+		fi
+	elif [ -n "$from_file" ]; then
+		value="$from_file"
+	else
+		value="$($gen)"
+		printf '%s=%s\n' "$name" "$value" >>"$SECRETS"
+		log "generated $name (stored in $SECRETS)"
+	fi
+	set_env "$name" "$value"
+}
+
+for name in MEILI_MASTER_KEY FLUXER_S3_SECRET_KEY LIVEKIT_API_SECRET \
+	FLUXER_SUDO_MODE_SECRET FLUXER_CONNECTION_INITIATION_SECRET \
+	FLUXER_PROFILE_PSEUDONYM_SECRET FLUXER_GATEWAY_RPC_AUTH_TOKEN \
+	FLUXER_ERLANG_COOKIE FLUXER_MEDIA_PROXY_SECRET_KEY \
+	FLUXER_ADMIN_SECRET_KEY_BASE FLUXER_ADMIN_OAUTH_CLIENT_SECRET; do
+	secret "$name" gen_hex
+done
+secret FLUXER_MEDIA_PROXY_UPLOAD_RELAY_SECRET_BASE64 gen_b64
+secret FLUXER_ACTIVITYPUB_SIGNING_KEY_BASE64 gen_rsa
+
+# The VAPID pair must match, so it is generated (or taken) as a pair.
+vpub="${FLUXER_VAPID_PUBLIC_KEY:-$(stored FLUXER_VAPID_PUBLIC_KEY)}"
+vpriv="${FLUXER_VAPID_PRIVATE_KEY:-$(stored FLUXER_VAPID_PRIVATE_KEY)}"
+if [ -z "$vpub" ] && [ -z "$vpriv" ]; then
+	read -r vpub vpriv < <(gen_vapid)
+	printf 'FLUXER_VAPID_PUBLIC_KEY=%s\nFLUXER_VAPID_PRIVATE_KEY=%s\n' "$vpub" "$vpriv" >>"$SECRETS"
+	log "generated the VAPID key pair (stored in $SECRETS)"
+elif [ -z "$vpub" ] || [ -z "$vpriv" ]; then
+	die "set both FLUXER_VAPID_PUBLIC_KEY and FLUXER_VAPID_PRIVATE_KEY, or neither"
+fi
+[ "${#vpub}" -eq 87 ] && [ "${#vpriv}" -eq 43 ] || die "VAPID keys have the wrong length (public 87, private 43 characters)"
+set_env FLUXER_VAPID_PUBLIC_KEY "$vpub"
+set_env FLUXER_VAPID_PRIVATE_KEY "$vpriv"
+
+# Setup token for the first admin account: generated once and logged once,
+# so the operator can read it from the container log on the first start.
+if [ -z "${FLUXER_SETUP_TOKEN:-}" ] && [ -z "$(stored FLUXER_SETUP_TOKEN)" ]; then
+	token="$(gen_hex)"
+	printf 'FLUXER_SETUP_TOKEN=%s\n' "$token" >>"$SECRETS"
+	log "first start: setup token for the admin account: $token"
+	log "(also stored in $SECRETS; open https://$FLUXER_DOMAIN and enter it)"
+fi
+secret FLUXER_SETUP_TOKEN gen_hex
+
+# --- 5. Config files ----------------------------------------------------------------
+cat >"$RUNDIR/nats.conf" <<EOF
+listen: 127.0.0.1:4222
+http: 127.0.0.1:8222
+jetstream {
+  store_dir: "$DATA_DIR/nats"
+  max_memory_store: ${FLUXER_NATS_MAX_MEMORY_STORE:-64MB}
+  max_file_store: ${FLUXER_NATS_MAX_FILE_STORE:-10GB}
+}
+EOF
+
+# LiveKit: same settings as the bundle's LIVEKIT_CONFIG, with the webhook
+# pointed at the api's fluxer-aio port.
+cat >"$RUNDIR/livekit.yaml" <<EOF
+port: 7880
+bind_addresses: ["0.0.0.0"]
+log_level: ${FLUXER_LIVEKIT_LOG_LEVEL:-info}
+rtc:
+  tcp_port: ${FLUXER_LIVEKIT_TCP_PORT:-7881}
+  udp_port: ${FLUXER_LIVEKIT_UDP_PORT:-7882}
+  use_external_ip: ${FLUXER_LIVEKIT_USE_EXTERNAL_IP:-true}
+  node_ip: "${FLUXER_LIVEKIT_NODE_IP:-}"
+  stun_servers:
+    - ${FLUXER_LIVEKIT_STUN_PRIMARY:-stun.l.google.com:19302}
+    - ${FLUXER_LIVEKIT_STUN_SECONDARY:-stun1.l.google.com:19302}
+  turn_servers: ${FLUXER_LIVEKIT_TURN_SERVERS:-[]}
+webhook:
+  api_key: $LIVEKIT_API_KEY
+  urls:
+    - http://127.0.0.1:18080/webhooks/livekit
+EOF
+chown "root:$group" "$RUNDIR/nats.conf" "$RUNDIR/livekit.yaml"
+chmod 0640 "$RUNDIR/nats.conf" "$RUNDIR/livekit.yaml"
+
+log "ready (UID $UID_, GID $GID_, data in $DATA_DIR)"

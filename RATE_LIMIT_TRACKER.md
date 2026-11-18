@@ -98,14 +98,41 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
   - Open for step 3: run everything as one configurable UID/GID (upstream
     uses 65532 and 10001); exact `NEEDED` libs of node native modules
     unverified (only provable by CI build + first start).
-- [ ] 3. Image `images/apps/fluxer-aio/`
-  - [ ] 3a. Dockerfile on `caaarrrlll/debian-slim-baseimage`, multi-stage
-    `COPY --from` pinned upstream digests + NATS/Meilisearch/LiveKit/Caddy
-  - [ ] 3b. Process supervisor (s6-overlay) service definitions
-  - [ ] 3c. Start-up script: secrets generated once into `/data`, env wiring,
-    per-service ports, internal router Caddyfile, homelab pool sizes
-    (api 10, worker 5, users 5, messages 5), filesystem uploads, Redis DB 1
-  - [ ] 3d. README + audit.md
+- [✓] 3. Image `images/apps/fluxer-aio/` (written + simulated; first real test is the CI build in step 5)
+  - [✓] 3a. Dockerfile + upstream pin/generator (2026-11-18; not built yet)
+    - `Dockerfile`: FROM debian-base; `COPY --from` upstream images pinned by
+      digest; s6-overlay 3.2.3.2 + Meilisearch 1.53.0 glibc binary with
+      SHA-256 checks (Meilisearch image is musl-linked; NATS, LiveKit, Caddy
+      verified static); build-time `fluxer-aio-selftest` (ldd etc.).
+    - `upstream/RELEASE` (bundle URL + sha256), `upstream/gen-env.py`
+      (stdlib-only compose -> `KEY=EXPR` env files; rewrites internal
+      addresses to 127.0.0.1 ports; hoists brace-containing defaults to
+      `!literal` lines because bash ends `${A:-{..}}` at the first `}`),
+      `upstream/env/{api,worker,gateway,media-proxy,rust}.env` (224/223/237/
+      244/470 vars). Prototype eval in bash: all OK, no stray braces.
+  - [✓] 3b. s6-overlay services (2026-11-18): oneshot `init-fluxer-aio`;
+    longruns svc-{nats,meilisearch,livekit,caddy,media-proxy,fluxer-server,
+    api,gateway} with start order nats -> fluxer-server -> api -> gateway;
+    log lines prefixed per service. `bash -n` OK.
+  - [✓] 3c. Start-up + runtime scripts (2026-11-18; simulated on Windows Git
+    Bash with stubbed user/chown/install, real openssl; not run in a container)
+    - `fluxer-aio-init`: required settings check, homelab pool defaults,
+      user/`/data` layout + object-store `.layout`, 16 secrets generated once
+      into `/data/secrets.env` (env wins, warns on mismatch), VAPID pair
+      validated, setup token logged once, NATS/LiveKit config. Scenarios:
+      missing settings, bad KV URL, first start, second start (secrets
+      byte-identical), override warning, half VAPID pair, bad UID: all as
+      designed; VAPID public key decodes to a P-256 point.
+    - `fluxer-aio-env`: per-service env (generated + overlay). Simulated all
+      four services: internal addresses 127.0.0.1, external PG/Redis passed,
+      secrets present, no leftover container hostnames or :8080; values with
+      `$`/`"` kept literal, `$(...)` in a setting not executed.
+    - Router `Caddyfile` (edge proxy mode + static files), `fluxer-aio-healthcheck`
+      (every service), `fluxer-aio-selftest` (build-time ldd/versions/caddy
+      validate/env eval).
+  - [✓] 3d. README (requirements, settings, ports, data, update procedure,
+    limitations, licensing), audit.md (snapshot, known issues), MIT LICENSE
+    (2026-11-18). Redaction grep clean.
 - [ ] 4. Template `templates/fluxer-aio.xml` (bare, generic): ports 8080
   (container; host port configurable, the maintainer picks a free one),
   7881/tcp, 7882/udp; `/data`; domain, Postgres, Redis, pool sizes

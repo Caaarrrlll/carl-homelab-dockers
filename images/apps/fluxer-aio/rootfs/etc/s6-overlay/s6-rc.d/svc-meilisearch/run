@@ -1,0 +1,17 @@
+#!/command/with-contenv bash
+# s6 longrun, started after init-fluxer-aio (see dependencies.d).
+set -e
+# Meilisearch, settings as in the bundle; data in /data/meilisearch.
+exec > >(exec sed -u "s/^/[meilisearch] /") 2>&1
+cd /data/meilisearch
+export MEILI_ENV="${FLUXER_MEILISEARCH_ENV:-production}" \
+	MEILI_NO_ANALYTICS="${FLUXER_MEILISEARCH_NO_ANALYTICS:-true}" \
+	MEILI_UPGRADE_DB=true \
+	MEILI_MAX_INDEXING_MEMORY="${FLUXER_MEILISEARCH_MAX_INDEXING_MEMORY:-256mb}" \
+	MEILI_MAX_INDEXING_THREADS="${FLUXER_MEILISEARCH_MAX_INDEXING_THREADS:-2}" \
+	MEILI_LOG_LEVEL="${FLUXER_MEILISEARCH_LOG_LEVEL:-WARN}" \
+	MEILI_HTTP_ADDR=127.0.0.1:7700 \
+	MEILI_DB_PATH=/data/meilisearch/data.ms \
+	MEILI_DUMP_DIR=/data/meilisearch/dumps \
+	MEILI_SNAPSHOT_DIR=/data/meilisearch/snapshots
+exec s6-setuidgid fluxer meilisearch

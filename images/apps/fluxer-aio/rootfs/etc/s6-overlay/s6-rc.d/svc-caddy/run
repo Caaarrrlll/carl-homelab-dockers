@@ -1,0 +1,7 @@
+#!/command/with-contenv bash
+# s6 longrun, started after init-fluxer-aio (see dependencies.d).
+set -e
+# Internal router on :8080 (plain HTTP; TLS is the operator's reverse proxy).
+exec > >(exec sed -u "s/^/[router] /") 2>&1
+export XDG_DATA_HOME=/data/caddy/data XDG_CONFIG_HOME=/data/caddy/config
+exec s6-setuidgid fluxer caddy run --config /etc/fluxer-aio/Caddyfile --adapter caddyfile

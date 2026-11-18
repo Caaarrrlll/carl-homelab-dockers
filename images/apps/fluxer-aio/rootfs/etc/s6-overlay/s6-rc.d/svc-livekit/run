@@ -1,0 +1,10 @@
+#!/command/with-contenv bash
+# s6 longrun, started after init-fluxer-aio (see dependencies.d).
+set -e
+# LiveKit voice/video; config written by fluxer-aio-init (as the bundle, via LIVEKIT_CONFIG).
+exec > >(exec sed -u "s/^/[livekit] /") 2>&1
+export GOMEMLIMIT="${FLUXER_LIVEKIT_GOMEMLIMIT:-435MiB}" \
+	LIVEKIT_KEYS="${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
+LIVEKIT_CONFIG="$(cat /run/fluxer-aio/livekit.yaml)"
+export LIVEKIT_CONFIG
+exec s6-setuidgid fluxer livekit-server

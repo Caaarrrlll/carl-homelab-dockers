@@ -1,0 +1,7 @@
+#!/command/with-contenv bash
+# s6 longrun, started after init-fluxer-aio (see dependencies.d).
+set -e
+# Fluxer API (Node) with the background worker embedded.
+exec > >(exec sed -u "s/^/[api] /") 2>&1
+cd /usr/src/app/fluxer_api
+exec s6-setuidgid fluxer fluxer-aio-env api /usr/local/bin/node dist/AppEntrypoint.js

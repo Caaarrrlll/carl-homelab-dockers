@@ -1,0 +1,7 @@
+#!/command/with-contenv bash
+# s6 longrun, started after init-fluxer-aio (see dependencies.d).
+set -e
+# All Fluxer Rust services in one process (upstream rust-server.compose.yml).
+exec > >(exec sed -u "s/^/[fluxer-server] /") 2>&1
+cd /srv/app
+exec s6-setuidgid fluxer fluxer-aio-env rust /usr/local/bin/fluxer-server

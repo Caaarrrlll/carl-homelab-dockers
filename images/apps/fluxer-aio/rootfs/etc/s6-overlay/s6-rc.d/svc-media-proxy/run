@@ -1,0 +1,7 @@
+#!/command/with-contenv bash
+# s6 longrun, started after init-fluxer-aio (see dependencies.d).
+set -e
+# Fluxer media proxy (Rust).
+exec > >(exec sed -u "s/^/[media-proxy] /") 2>&1
+cd /data/tmp/media-proxy
+exec s6-setuidgid fluxer fluxer-aio-env media-proxy /usr/local/bin/fluxer-media-proxy

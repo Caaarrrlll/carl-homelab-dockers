@@ -1,0 +1,70 @@
+# Audit Log — fluxer-aio (Fluxer all-in-one)
+
+## Image
+
+| Item | Value |
+|---|---|
+| Source repo | `Caaarrrlll/carl-homelab-dockers` (monorepo) |
+| Docker Hub image | `caaarrrlll/fluxer-aio:latest` |
+| Base image | `caaarrrlll/debian-slim-baseimage:trixie-latest` |
+| Build context | `images/apps/fluxer-aio/` |
+| Upstream | Fluxer `fluxer-release@2026.1118.90548` compose bundle (`upstream/RELEASE`) |
+| Last audited | 2026-11-18 |
+
+## Current snapshot
+
+- Copies Fluxer api (Node 26.13.0), gateway (Erlang release with its own
+  ERTS 16.4.0.7), media-proxy (+ its `/usr/local/lib`), fluxer-server (all
+  Rust services) and the static web files from the official images, each
+  pinned by digest in the Dockerfile.
+- NATS 2.14, LiveKit 1.12.0, Caddy 2.11 copied from official images (static
+  binaries, checked 2026-11-18); Meilisearch 1.53.0 glibc release binary
+  (official image is musl-linked), SHA-256 pinned.
+- s6-overlay 3.2.3.2 (SHA-256 pinned): oneshot `init-fluxer-aio`, longruns
+  `svc-{nats,meilisearch,livekit,caddy,media-proxy,fluxer-server,api,gateway}`.
+- Environment: `upstream/env/*.env` generated from the bundle by
+  `upstream/gen-env.py`; fixed fluxer-aio values in
+  `rootfs/etc/fluxer-aio/overlay/`. Internal addresses rewritten to
+  127.0.0.1 ports (README "Ports").
+- External Postgres/Redis/reverse proxy; uploads on the filesystem store
+  under `/data/objects`; worker embedded in the api process.
+- Homelab pool defaults: api 10, users 5, messages 5 (upstream 25/20/20).
+- Secrets generated once into `/data/secrets.env` (0600); container settings
+  override; setup token logged on the first start.
+- Runs as `fluxer` with `UID`/`GID` (default `99`/`100`); `init` fixes
+  ownership only when a top-level directory is wrong.
+- Published ports: `8080/tcp` (HTTP), `7881/tcp` + `7882/udp` (LiveKit).
+- Build-time `fluxer-aio-selftest`: `ldd` on every binary, gateway NIF and
+  node native module; versions; `caddy validate`; env evaluation.
+- Labels: licenses `MIT AND AGPL-3.0-or-later`.
+
+## Known issues / unverified
+
+- Not yet built in CI or run on Unraid (as of 2026-11-18). The env loader
+  and start-up script are simulated only (Windows Git Bash, stubs).
+- The embedded worker gets the api's environment; upstream's worker-only
+  settings (`FLUXER_API_WORKER_MODE=all_lanes`,
+  `FLUXER_API_WORKER_ENABLE_CRON_SCHEDULER=true`) are not set. Check on the
+  first start that background jobs and cron run; if not, add them to
+  `overlay/api.env`.
+- `FLUXER_SERVER_ADMIN__FLUXER_STORAGE_*` in `overlay/rust.env` assumes the
+  combined Rust process reads per-service `FLUXER_SERVER_<SVC>__` overrides
+  the same way as for ports (upstream only sets the filesystem store on its
+  separate admin container).
+- Gateway open-file limit: the run script tries `ulimit -n 65536`; Docker's
+  default may cap it (add `--ulimit nofile=65536:65536` if the log says so).
+
+## Change log
+
+| Date | Commit | Change | Notes |
+|---|---|---|---|
+| 2026-11-18 | _(this change)_ | New image | Fluxer 2026.1118.90548; see `RATE_LIMIT_TRACKER.md` (fluxer-aio) for the research and simulation record. |
+
+## Review checklist
+
+- [ ] On a release bump: `upstream/RELEASE`, Dockerfile `*_IMAGE` digests,
+  `gen-env.py` re-run and diff reviewed, this snapshot updated.
+- [ ] CI build green (self-test passed).
+- [ ] First start on Unraid: all services healthy, setup token works.
+- [ ] Text chat, voice; screen share (optional).
+- [ ] `/data/secrets.env` and `objects/` included in backups.

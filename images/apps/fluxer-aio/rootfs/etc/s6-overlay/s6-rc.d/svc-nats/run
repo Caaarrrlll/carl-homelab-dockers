@@ -1,0 +1,7 @@
+#!/command/with-contenv bash
+# s6 longrun, started after init-fluxer-aio (see dependencies.d).
+set -e
+# NATS with JetStream; config written by fluxer-aio-init.
+exec > >(exec sed -u "s/^/[nats] /") 2>&1
+export GOMEMLIMIT="${FLUXER_NATS_GOMEMLIMIT:-200MiB}"
+exec s6-setuidgid fluxer nats-server -c /run/fluxer-aio/nats.conf
