@@ -4,10 +4,18 @@ Overview of this repository for automated/agent contributors.
 
 ## What this is
 
-`carl-gaming-dockers` is a monorepo for the Docker images used to run an
-**ARK: Survival Ascended** dedicated server under Wine on an **Unraid** host.
+`carl-homelab-dockers` is a monorepo for the maintainer's own Docker images
+and Unraid templates for their homelab on an **Unraid** host. Today it holds
+the images used to run an **ARK: Survival Ascended** dedicated server cluster
+under Wine (Debian → Wine → ASA), so most rules below are about that chain;
+treat ASA-specific rules (shared install, ASA env vars, the five-place
+alignment) as scoped to `images/games/asa-docker` and `templates/asa-wine.xml`.
+Services that only need an Unraid wrapper around an upstream image get a
+template in `templates/`, not an image under `images/`.
+
 It was created by importing the original per-image repositories with
-`git subtree`, so their history lives under `images/`.
+`git subtree`, so their history lives under `images/`. The repo was named
+`carl-gaming-dockers` until 2026-11-18; GitHub redirects the old URL.
 
 ## Related instructions
 

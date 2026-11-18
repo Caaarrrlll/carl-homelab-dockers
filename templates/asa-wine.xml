@@ -14,8 +14,8 @@
   <MyIP/>
   <Shell>bash</Shell>
   <Privileged>true</Privileged>
-  <Support>https://github.com/Caaarrrlll/carl-gaming-dockers/issues</Support>
-  <Project>https://github.com/Caaarrrlll/carl-gaming-dockers</Project>
+  <Support>https://github.com/Caaarrrlll/carl-homelab-dockers/issues</Support>
+  <Project>https://github.com/Caaarrrlll/carl-homelab-dockers</Project>
   <Overview>ARK: Survival Ascended dedicated server (Steam app 2430930) running under Wine 11 on Debian. SteamCMD installs/updates the server on every start.[br][br]
 One container per map, all sharing the same Server Files folder (one download per game update) and cluster. Stop all ASA servers before restarting for a game update, then start them one at a time.[br][br]
 Ports: game 7760+n / query 27000+n, one slot per map (see Mods.txt on the Swap share). Set both port mappings AND -port/-QueryPort in Extra Game Parameters.[br][br]
@@ -29,8 +29,8 @@ Rollback: CI keeps the image it replaces as :previous and also pushes dated and 
 WARNING: DEBUG=1 prints passwords to the container log.</Overview>
   <Category>GameServers:</Category>
   <WebUI/>
-  <TemplateURL>https://raw.githubusercontent.com/Caaarrrlll/carl-gaming-dockers/main/templates/asa-wine.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/Caaarrrlll/carl-gaming-dockers/main/images/games/asa-docker/asa.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/Caaarrrlll/carl-homelab-dockers/main/templates/asa-wine.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/Caaarrrlll/carl-homelab-dockers/main/images/games/asa-docker/asa.png</Icon>
   <ExtraParams>--restart=unless-stopped --shm-size=4g --stop-timeout=60 --tmpfs /serverdata/serverfiles/WINE64/drive_c/users/steam/AppData/Local/GameAnalytics:rw,size=64m,mode=1777</ExtraParams>
   <PostArgs/>
   <CPUset/>

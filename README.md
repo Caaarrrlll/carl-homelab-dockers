@@ -1,7 +1,12 @@
-# carl-gaming-dockers
+# carl-homelab-dockers
 
-Monorepo for the Docker images used to run an **ARK: Survival Ascended**
-dedicated server under Wine on **Unraid**.
+Monorepo for my homelab's Docker images and **Unraid** templates. It currently
+holds the image chain used to run an **ARK: Survival Ascended** dedicated
+server cluster under Wine. Services that only need an Unraid wrapper around an
+upstream image get a template in `templates/` rather than an image here.
+
+(Formerly `carl-gaming-dockers`, renamed 2026-11-18; the old GitHub URL
+redirects.)
 
 ## Images
 

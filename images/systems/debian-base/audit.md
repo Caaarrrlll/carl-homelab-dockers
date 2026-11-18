@@ -4,11 +4,11 @@
 
 | Item | Value |
 |---|---|
-| Source repo | `Caaarrrlll/carl-gaming-dockers` (monorepo; imported from `Caaarrrlll/docker-debian-baseimage`) |
+| Source repo | `Caaarrrlll/carl-homelab-dockers` (monorepo, renamed from `carl-gaming-dockers` 2026-11-18; imported from `Caaarrrlll/docker-debian-baseimage`) |
 | Docker Hub image | `caaarrrlll/debian-slim-baseimage:trixie-latest` |
 | Base image | `debian:trixie-slim` |
 | Build context | `images/systems/debian-base/` |
-| Last audited | 2026-11-17 |
+| Last audited | 2026-11-18 |
 
 ## Current snapshot
 
@@ -22,6 +22,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
+| 2026-11-18 | _(this change)_ | source label → `carl-homelab-dockers` | Repo renamed on GitHub; `org.opencontainers.image.source` and the template URLs follow. Label-only, committed with `[skip ci]`: ships with the next real build (old URL redirects until then). |
 | 2026-11-17 | `6b930a6` | source label → monorepo; README rewritten; CI rollback tags | `org.opencontainers.image.source` now points at `carl-gaming-dockers`. CI also pushes `trixie-YYYY-MM-DD` and `trixie-sha-<commit>`. |
 | 2026-06-17 | `74c9190` | update docker | |
 | 2026-04-25 | `bf9c21f` | updated readme and finish base image | |

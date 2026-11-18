@@ -1,7 +1,7 @@
 FROM caaarrrlll/debian-slim-baseimage:trixie-latest
 
 LABEL org.opencontainers.image.authors="venter109@gmail.com"
-LABEL org.opencontainers.image.source="https://github.com/Caaarrrlll/carl-gaming-dockers"
+LABEL org.opencontainers.image.source="https://github.com/Caaarrrlll/carl-homelab-dockers"
 LABEL org.opencontainers.image.licenses="MIT"
 
 RUN dpkg --add-architecture i386 && \

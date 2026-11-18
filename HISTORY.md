@@ -7,7 +7,17 @@ long-running upgrade finishes, its tracking document is moved under
 `docs/history/2026-11-07-ntsync-wine11.md`) so entries sort chronologically,
 and referenced from this file.
 
-## 2026-11-18 — GameAnalytics log flood, agent tracking setup
+## 2026-11-18 — GameAnalytics log flood, agent tracking setup, repo rename
+
+- **Repo renamed** `carl-gaming-dockers` → `carl-homelab-dockers`. Motivation:
+  the maintainer wants one place for all their own homelab images and Unraid
+  templates (for example future Fluxer / Stoat templates), not only the ASA
+  chain. Plain upstream wrappers (such as Caddy) stay template-only and are not
+  built here; larger projects with their own code (a planned multi-platform
+  chat bot) get their own repo. Docker Hub image names are unchanged. The
+  `org.opencontainers.image.source` labels and the template's
+  Support/Project/TemplateURL/Icon now use the new name; the label change was
+  committed with `[skip ci]` and ships with the next real build.
 
 - **Problem:** every ASA server logged `SQLITE3 FINALIZE ERROR: database disk
   image is malformed` and `Database too large. Event has been blocked.` every
