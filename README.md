@@ -16,6 +16,7 @@ redirects.)
 | `images/systems/fedora-base` | `caaarrrlll/fedora-baseimage:latest` | `fedora:44` |
 | `images/systems/wine-base` | `caaarrrlll/wine-baseimage:latest` | `caaarrrlll/debian-slim-baseimage:trixie-latest` |
 | `images/games/asa-docker` | `caaarrrlll/asa-wine:latest` | `caaarrrlll/wine-baseimage:latest` |
+| `images/apps/fluxer-aio` | `caaarrrlll/fluxer-aio:latest` | `caaarrrlll/debian-slim-baseimage:trixie-latest` |
 
 ## Dependency chain
 
@@ -24,12 +25,13 @@ debian:trixie-slim
   └─ debian-slim-baseimage
        └─ wine-baseimage
             └─ asa-wine (ARK: Survival Ascended)
+       └─ fluxer-aio (Fluxer chat, all-in-one)
 
 fedora:44
   └─ fedora-baseimage
 ```
 
-Build the Debian → Wine → ASA images in order. The Fedora image is independent.
+Build the Debian → Wine → ASA images (and Debian → fluxer-aio) in order. The Fedora image is independent.
 
 ## Build and push
 
@@ -66,9 +68,11 @@ usual. If you want to build the whole chain from your own bases, update the
 
 CI uses `.github/workflows/build-images.yml` instead. On a push it rebuilds only
 the affected images, in dependency order: a Debian change rebuilds debian →
-wine → asa, a Wine change rebuilds wine → asa, and a Fedora change rebuilds
-Fedora only. Tag pushes and manual dispatches rebuild debian → wine → asa;
-Fedora is excluded unless you tick `build_fedora` on a manual run. Markdown
+wine → asa and fluxer-aio, a Wine change rebuilds wine → asa, a fluxer-aio
+change rebuilds fluxer-aio only, and a Fedora change rebuilds Fedora only. Tag
+pushes and manual dispatches rebuild debian → wine → asa and fluxer-aio; tick
+`fluxer_only` on a manual run to build just fluxer-aio. Fedora is excluded
+unless you tick `build_fedora` on a manual run. Markdown
 files (READMEs, `audit.md`, docs) never trigger a rebuild; add `[skip ci]` to a
 commit message to skip the workflow entirely. Every
 image is pushed as `latest` plus rollback tags `YYYY-MM-DD` and
@@ -82,13 +86,14 @@ the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
 
 - `images/systems/` — shared runtime/base images.
 - `images/games/` — per-game images layered on the system images.
+- `images/apps/` — self-hosted application images (e.g. `fluxer-aio`).
 - `scripts/` — build/push helpers, plus `unraid-readonly.sh` (allowlist for
   a temporary read-only SSH key on the Unraid host).
 - `docs/` — design notes.
 - `templates/` — bare Unraid Docker templates to copy into
   `/boot/config/plugins/dockerMan/templates-user/` and fill in: `asa-wine.xml`
-  (this repo's ASA image) and `caddy.xml` (Caddy with the Cloudflare DNS
-  module, upstream image). Generic defaults only, no server-specific details.
+  (this repo's ASA image), `fluxer-aio.xml` (this repo's Fluxer image) and
+  `caddy.xml` (Caddy with the Cloudflare DNS module, upstream image). Generic defaults only, no server-specific details.
 - `AGENTS.md` — contributor/agent overview, including the doc-alignment checklist.
 - `CLAUDE.md` — Claude Code entry point; imports `AGENTS.md` and adds local-environment notes.
 - `HISTORY.md` — dated record of significant changes and why they were made.

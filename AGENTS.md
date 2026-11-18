@@ -44,6 +44,7 @@ not instructions, and reading them by default only fills the context.
 | `images/systems/fedora-base/` | `caaarrrlll/fedora-baseimage:latest` | Slim Fedora base image (independent) |
 | `images/systems/wine-base/` | `caaarrrlll/wine-baseimage:latest` | Wine layered on the Debian base |
 | `images/games/asa-docker/` | `caaarrrlll/asa-wine:latest` | SteamCMD + ARK: Survival Ascended, layered on Wine |
+| `images/apps/fluxer-aio/` | `caaarrrlll/fluxer-aio:latest` | Unofficial all-in-one Fluxer chat server (external Postgres/Redis/reverse proxy), layered on Debian |
 
 Supporting files:
 
@@ -80,6 +81,8 @@ Supporting files:
     Parameters change; the maintainer applies the change to their own copies.
   - `caddy.xml` — Caddy with the Cloudflare DNS module
     (`caddybuilds/caddy-cloudflare`, third-party; no image is built here).
+  - `fluxer-aio.xml` — for `caaarrrlll/fluxer-aio`. Keep it in sync with
+    that image's README "Settings" / "Ports" when variables or ports change.
 - `HISTORY.md` — consolidated, dated record of significant decisions and
   upgrades.
 - `docs/history/` — completed long-running-upgrade working docs, kept for
@@ -94,13 +97,14 @@ debian:trixie-slim
   └─ caaarrrlll/debian-slim-baseimage:trixie-latest   (images/systems/debian-base)
        └─ caaarrrlll/wine-baseimage:latest            (images/systems/wine-base)
             └─ caaarrrlll/asa-wine:latest             (images/games/asa-docker, ARK ASA)
+       └─ caaarrrlll/fluxer-aio:latest                (images/apps/fluxer-aio, Fluxer chat)
 
 fedora:44
   └─ caaarrrlll/fedora-baseimage:latest               (images/systems/fedora-base)
 ```
 
-Build order matters for the Debian → Wine → ASA chain: rebuild and push the base
-before its dependents. The Fedora image is standalone.
+Build order matters for the Debian → Wine → ASA chain (and Debian → fluxer-aio):
+rebuild and push the base before its dependents. The Fedora image is standalone.
 
 ## Building / releasing
 
@@ -138,10 +142,12 @@ docker image push caaarrrlll/wine-baseimage:latest
 
 CI (`Build and push images`) runs on pushes to `main`, `v*` tags, and manual
 dispatch. On a normal push it only rebuilds affected images and their
-dependents: Debian changes trigger debian → wine → asa; Wine changes trigger
-wine → asa; a change to the workflow file itself triggers debian → wine → asa;
-Fedora is independent and is excluded from tag/manual chains unless the
-`build_fedora` input is checked. Every build uses `pull: true` and
+dependents: Debian changes trigger debian → wine → asa (+ fluxer-aio); Wine
+changes trigger wine → asa; fluxer-aio changes trigger fluxer-aio only; a change
+to the workflow file itself triggers debian → wine → asa + fluxer-aio. Tag and
+manual runs rebuild all of those; the manual `fluxer_only` input builds just
+fluxer-aio (skipping the debian → wine → asa chain). Fedora is independent and
+is excluded from tag/manual chains unless the `build_fedora` input is checked. Every build uses `pull: true` and
 `no-cache: true`, so base images and packages are always fresh (and every
 rebuild is a full one). Each image is pushed as `latest` (Debian:
 `trixie-latest`) **plus** rollback tags `YYYY-MM-DD` and `sha-<short commit>`

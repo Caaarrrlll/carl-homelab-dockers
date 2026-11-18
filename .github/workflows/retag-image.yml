@@ -16,6 +16,7 @@ on:
         type: choice
         options:
           - asa-wine
+          - fluxer-aio
           - wine-baseimage
           - debian-slim-baseimage
           - fedora-baseimage

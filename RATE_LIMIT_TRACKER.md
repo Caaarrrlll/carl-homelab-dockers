@@ -133,10 +133,21 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
   - [✓] 3d. README (requirements, settings, ports, data, update procedure,
     limitations, licensing), audit.md (snapshot, known issues), MIT LICENSE
     (2026-11-18). Redaction grep clean.
-- [ ] 4. Template `templates/fluxer-aio.xml` (bare, generic): ports 8080
-  (container; host port configurable, the maintainer picks a free one),
-  7881/tcp, 7882/udp; `/data`; domain, Postgres, Redis, pool sizes
-- [ ] 5. CI: build + push `fluxer-aio` after debian; verify green run
+- [✓] 4. Template `templates/fluxer-aio.xml` (2026-11-18): bare/generic; ports
+  8080/tcp (HTTP), 7881/tcp + 7882/udp (voice); `/data`; required domain,
+  PG host/password, Redis URL (masked); optional PG port/db/user, pools
+  10/5/5, LiveKit IP/TURN, UID/GID; ExtraParams `--ulimit nofile=65536:65536`
+  (gateway) + `--stop-timeout=60`. Parses (19 Config); redaction grep clean.
+  AGENTS/README layout, dependency chain and template list updated.
+- [•] 5. CI: build + push `fluxer-aio`; verify green run
+  - [✓] 5a. Workflow (2026-11-18): `fluxer` path filter; keep-previous + build
+    steps (on debian/fluxer/workflow change, tag, manual); manual input
+    `fluxer_only` skips debian -> wine -> asa. Retag workflow lists
+    fluxer-aio. YAML parsed (PyYAML in scratchpad), `if:` conditions re-read.
+    AGENTS/README CI text, HISTORY entry, template (step 4) committed with
+    `[skip ci]` so the workflow edit doesn't rebuild the ASA chain.
+  - [ ] 5b. Push; dispatch `Build and push images` with `fluxer_only=true`;
+    green run = build + self-test passed. On failure: read the log, fix, repeat.
 - [ ] 6. CI: scheduled check for new Fluxer releases -> bump digests/rebuild
 - [ ] 7. [⏳] Maintainer prep on Unraid: create PG role + DB `fluxer`; Caddy
   site -> `<unraid-ip>:<host-port>`; DNS; router forwards TCP 7881 + UDP 7882

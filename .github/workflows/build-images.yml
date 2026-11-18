@@ -10,6 +10,10 @@ on:
         description: Also build and push the Fedora base image
         type: boolean
         default: false
+      fluxer_only:
+        description: Build only fluxer-aio (skip the debian -> wine -> asa chain)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -46,6 +50,9 @@ jobs:
             asa:
               - 'images/games/asa-docker/**'
               - '!**/*.md'
+            fluxer:
+              - 'images/apps/fluxer-aio/**'
+              - '!**/*.md'
             workflow:
               - '.github/workflows/build-images.yml'
 
@@ -69,7 +76,7 @@ jobs:
       # Keep the image that is about to be replaced as :trixie-previous (registry-side
       # copy, nothing is downloaded). Gives a one-step rollback target.
       - name: Keep current Debian base as :trixie-previous
-        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.workflow == 'true'
+        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.workflow == 'true'
         env:
           SRC: ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-latest
           DST: ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-previous
@@ -81,7 +88,7 @@ jobs:
           fi
 
       - name: Build and push Debian base
-        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.workflow == 'true'
+        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.workflow == 'true'
         uses: docker/build-push-action@v6
         with:
           context: images/systems/debian-base
@@ -123,7 +130,7 @@ jobs:
       # Keep the image that is about to be replaced as :previous (registry-side
       # copy, nothing is downloaded). Gives a one-step rollback target.
       - name: Keep current Wine base as :previous
-        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.workflow == 'true'
+        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.workflow == 'true'
         env:
           SRC: ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:latest
           DST: ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:previous
@@ -135,7 +142,7 @@ jobs:
           fi
 
       - name: Build and push Wine base
-        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.workflow == 'true'
+        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.workflow == 'true'
         uses: docker/build-push-action@v6
         with:
           context: images/systems/wine-base
@@ -150,7 +157,7 @@ jobs:
       # Keep the image that is about to be replaced as :previous (registry-side
       # copy, nothing is downloaded). Gives a one-step rollback target.
       - name: Keep current ASA as :previous
-        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.asa == 'true' || steps.changes.outputs.workflow == 'true'
+        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.asa == 'true' || steps.changes.outputs.workflow == 'true'
         env:
           SRC: ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:latest
           DST: ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:previous
@@ -162,7 +169,7 @@ jobs:
           fi
 
       - name: Build and push ASA
-        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.asa == 'true' || steps.changes.outputs.workflow == 'true'
+        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.asa == 'true' || steps.changes.outputs.workflow == 'true'
         uses: docker/build-push-action@v6
         with:
           context: images/games/asa-docker
@@ -173,3 +180,31 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:${{ steps.tags.outputs.date }}
             ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:${{ steps.tags.outputs.sha }}
+
+      # fluxer-aio depends only on the Debian base (not on Wine). It is rebuilt
+      # with the Debian base, on its own changes, on workflow edits, and on
+      # tag/manual runs (also when fluxer_only is ticked).
+      - name: Keep current fluxer-aio as :previous
+        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.fluxer == 'true' || steps.changes.outputs.workflow == 'true'
+        env:
+          SRC: ${{ secrets.DOCKERHUB_USERNAME }}/fluxer-aio:latest
+          DST: ${{ secrets.DOCKERHUB_USERNAME }}/fluxer-aio:previous
+        run: |
+          if docker buildx imagetools inspect "$SRC" > /dev/null 2>&1; then
+            docker buildx imagetools create -t "$DST" "$SRC"
+          else
+            echo "::notice::$SRC does not exist yet, nothing to keep"
+          fi
+
+      - name: Build and push fluxer-aio
+        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.fluxer == 'true' || steps.changes.outputs.workflow == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: images/apps/fluxer-aio
+          pull: true
+          no-cache: true
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/fluxer-aio:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/fluxer-aio:${{ steps.tags.outputs.date }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/fluxer-aio:${{ steps.tags.outputs.sha }}

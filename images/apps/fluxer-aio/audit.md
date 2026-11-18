@@ -51,14 +51,15 @@
   combined Rust process reads per-service `FLUXER_SERVER_<SVC>__` overrides
   the same way as for ports (upstream only sets the filesystem store on its
   separate admin container).
-- Gateway open-file limit: the run script tries `ulimit -n 65536`; Docker's
-  default may cap it (add `--ulimit nofile=65536:65536` if the log says so).
+- Gateway open-file limit: the template sets `--ulimit nofile=65536:65536`
+  (upstream's value); without it the run script's `ulimit -n 65536` may be
+  capped by Docker's default and logs a hint.
 
 ## Change log
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
-| 2026-11-18 | _(this change)_ | New image | Fluxer 2026.1118.90548; see `RATE_LIMIT_TRACKER.md` (fluxer-aio) for the research and simulation record. |
+| 2026-11-18 | `b144c4a` | New image | Fluxer 2026.1118.90548; see `RATE_LIMIT_TRACKER.md` (fluxer-aio) for the research and simulation record. |
 
 ## Review checklist
 

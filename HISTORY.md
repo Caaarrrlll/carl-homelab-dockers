@@ -7,7 +7,30 @@ long-running upgrade finishes, its tracking document is moved under
 `docs/history/2026-11-07-ntsync-wine11.md`) so entries sort chronologically,
 and referenced from this file.
 
-## 2026-11-18 — GameAnalytics log flood, agent tracking setup, repo rename
+## 2026-11-18 — GameAnalytics log flood, agent tracking setup, repo rename, fluxer-aio
+
+- **New image `fluxer-aio`** (`images/apps/fluxer-aio`, template
+  `templates/fluxer-aio.xml`): Fluxer chat in one container. Motivation:
+  Fluxer's official self-hosting is a ~20-container Compose stack, and the
+  maintainer wanted a single Unraid container that reuses their existing
+  Postgres, Redis and Caddy. Stoat (ex-Revolt) was compared and set aside: it
+  needs MongoDB, RabbitMQ and MinIO and a 100-port UDP range for voice. A
+  plain template could not deploy either stack; a wrapper was judged worth it
+  for Fluxer because every official Fluxer image is Debian trixie (same base
+  as ours), so components are copied from the pinned official images rather
+  than compiled. Key choices: settings generated from the release's compose
+  file (`upstream/gen-env.py`) instead of hand-copied; uploads on disk (no
+  SeaweedFS); worker embedded in the api; smaller Postgres pools (api 10,
+  users 5, messages 5) because the database server is shared; secrets
+  generated once into `/data/secrets.env`. CI gained a `fluxer_only` manual
+  input so it can be built without rebuilding the ASA chain. Research and
+  simulation record: `RATE_LIMIT_TRACKER.md` / `_HISTORY.md` ("Fluxer").
+- **Temporary read-only Unraid access** for the build:
+  `scripts/unraid-readonly.sh`, an SSH forced-command allowlist (no shell, no
+  env vars in `inspect`), revoked when the build is done.
+- **Repo-wide redaction rule**: nothing committed may name the maintainer's
+  server (host, shares, real paths, container names, IPs, weaknesses);
+  trackers and archives were redacted on this date.
 
 - **Repo renamed** `carl-gaming-dockers` → `carl-homelab-dockers`. Motivation:
   the maintainer wants one place for all their own homelab images and Unraid

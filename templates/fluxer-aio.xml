@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<!--
+  Bare Unraid template for caaarrrlll/fluxer-aio (images/apps/fluxer-aio):
+  unofficial all-in-one Fluxer chat server. Copy it to
+  /boot/config/plugins/dockerMan/templates-user/ as my-fluxer-aio.xml, then
+  add it from Docker > Add Container. Fill in the domain, Postgres and Redis
+  settings; adjust the host ports and data path to your setup.
+-->
+<Container version="2">
+  <Name>fluxer-aio</Name>
+  <Repository>caaarrrlll/fluxer-aio:latest</Repository>
+  <Registry>https://hub.docker.com/r/caaarrrlll/fluxer-aio</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/Caaarrrlll/carl-homelab-dockers/issues</Support>
+  <Project>https://github.com/Caaarrrlll/carl-homelab-dockers/tree/main/images/apps/fluxer-aio</Project>
+  <Overview>Fluxer (open-source chat: text, voice, video) in ONE container. Unofficial: not affiliated with or supported by the Fluxer project.[br][br]
+Inside: Fluxer api, gateway, media-proxy and Rust services, plus NATS, Meilisearch, LiveKit (voice) and an internal HTTP router. You provide: a Postgres database, a Redis/Valkey server and a reverse proxy with TLS for your domain.[br][br]
+Before the first start: create the Postgres role and database (CREATE ROLE fluxer LOGIN PASSWORD '...'; CREATE DATABASE fluxer OWNER fluxer;), point your reverse proxy at this container's HTTP port (all paths, websockets on), and forward TCP 7881 + UDP 7882 on your router for voice/video.[br][br]
+First start: the log prints a setup token ('[fluxer-aio-init] first start: setup token ...'); open https://your-domain and enter it to create the admin account. Secrets are generated once into /data/secrets.env: back up the Data folder (and your Postgres database). Several of those secrets must never change.[br][br]
+Every service logs to the container log with a [service] prefix. The health check names the first failing service.</Overview>
+  <Category>Social: Network:Voip</Category>
+  <WebUI/>
+  <TemplateURL>https://raw.githubusercontent.com/Caaarrrlll/carl-homelab-dockers/main/templates/fluxer-aio.xml</TemplateURL>
+  <Icon>https://github.com/fluxerapp.png</Icon>
+  <ExtraParams>--restart=unless-stopped --stop-timeout=60 --ulimit nofile=65536:65536</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>An external Postgres (16+) with an empty 'fluxer' database, a Redis/Valkey server, a reverse proxy with TLS for your domain, and router forwards for TCP 7881 and UDP 7882 (voice/video). Upstream suggests at least 4 GB of RAM.</Requires>
+
+  <!-- Ports -->
+  <Config Name="HTTP Port" Target="8080" Default="8080" Mode="tcp" Description="Plain HTTP for your reverse proxy (it terminates TLS and forwards everything here). Pick any free host port." Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="Voice TCP Port" Target="7881" Default="7881" Mode="tcp" Description="LiveKit voice/video over TCP. Forward this port on your router; calls do not go through the reverse proxy. Keep host and container port the same." Type="Port" Display="always" Required="true" Mask="false">7881</Config>
+  <Config Name="Voice UDP Port" Target="7882" Default="7882" Mode="udp" Description="LiveKit voice/video over UDP (preferred by clients). Forward this port on your router. Keep host and container port the same." Type="Port" Display="always" Required="true" Mask="false">7882</Config>
+
+  <!-- Storage -->
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/fluxer-aio" Mode="rw" Description="Generated secrets (secrets.env), uploaded files (objects/), search index, NATS state. Back this up." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/fluxer-aio</Config>
+
+  <!-- Required settings -->
+  <Config Name="Domain" Target="FLUXER_DOMAIN" Default="" Mode="" Description="Public domain Fluxer runs on, served by your reverse proxy (e.g. chat.example.com)." Type="Variable" Display="always" Required="true" Mask="false"/>
+  <Config Name="Postgres Host" Target="FLUXER_POSTGRES_HOST" Default="" Mode="" Description="Host or IP of your Postgres server. From a bridge-network container, use the Unraid IP for a Postgres on the host network." Type="Variable" Display="always" Required="true" Mask="false"/>
+  <Config Name="Postgres Password" Target="POSTGRES_PASSWORD" Default="" Mode="" Description="Password of the Fluxer Postgres role." Type="Variable" Display="always" Required="true" Mask="true"/>
+  <Config Name="Redis URL" Target="FLUXER_KV_URL" Default="" Mode="" Description="redis://host:6379/1 (or redis://:password@host:6379/1). Use a database number no other app uses." Type="Variable" Display="always" Required="true" Mask="true"/>
+
+  <!-- Optional settings -->
+  <Config Name="Postgres Port" Target="FLUXER_POSTGRES_PORT" Default="5432" Mode="" Description="Port of your Postgres server." Type="Variable" Display="advanced" Required="false" Mask="false">5432</Config>
+  <Config Name="Postgres Database" Target="FLUXER_POSTGRES_DATABASE" Default="fluxer" Mode="" Description="Database name." Type="Variable" Display="advanced" Required="false" Mask="false">fluxer</Config>
+  <Config Name="Postgres User" Target="FLUXER_POSTGRES_USERNAME" Default="fluxer" Mode="" Description="Role Fluxer connects as." Type="Variable" Display="advanced" Required="false" Mask="false">fluxer</Config>
+  <Config Name="API DB Connections" Target="FLUXER_API_POSTGRES_MAX_CONNECTIONS" Default="10" Mode="" Description="Postgres pool of the api and its embedded worker (upstream default 25)." Type="Variable" Display="advanced" Required="false" Mask="false">10</Config>
+  <Config Name="Users DB Connections" Target="FLUXER_USERS_POSTGRES_MAX_CONNECTIONS" Default="5" Mode="" Description="Postgres pool of the users service (upstream default 20)." Type="Variable" Display="advanced" Required="false" Mask="false">5</Config>
+  <Config Name="Messages DB Connections" Target="FLUXER_MESSAGES_POSTGRES_MAX_CONNECTIONS" Default="5" Mode="" Description="Postgres pool of the messages service (upstream default 20)." Type="Variable" Display="advanced" Required="false" Mask="false">5</Config>
+  <Config Name="Voice Public IP" Target="FLUXER_LIVEKIT_NODE_IP" Default="" Mode="" Description="Your public IP for voice/video. Leave empty to detect it via STUN; if set, also set Voice Detect IP to false." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  <Config Name="Voice Detect IP" Target="FLUXER_LIVEKIT_USE_EXTERNAL_IP" Default="true" Mode="" Description="true = LiveKit finds its public IP via STUN. false when Voice Public IP is set." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="TURN Servers" Target="FLUXER_LIVEKIT_TURN_SERVERS" Default="" Mode="" Description="Optional JSON list of TURN servers for clients on networks that block UDP (see Fluxer docs)." Type="Variable" Display="advanced" Required="false" Mask="true"/>
+  <Config Name="UID" Target="UID" Default="99" Mode="" Description="User ID the services run as (Unraid default nobody = 99)." Type="Variable" Display="advanced" Required="true" Mask="false">99</Config>
+  <Config Name="GID" Target="GID" Default="100" Mode="" Description="Group ID the services run as (Unraid default users = 100)." Type="Variable" Display="advanced" Required="true" Mask="false">100</Config>
+</Container>
