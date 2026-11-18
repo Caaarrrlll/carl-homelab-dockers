@@ -39,6 +39,9 @@ not instructions, and reading them by default only fills the context.
 
 Supporting files:
 
+- `CLAUDE.md` — Claude Code entry point: imports this file (`@AGENTS.md`) and
+  adds only Claude-specific notes (local environment, guardrail summary).
+  Keep project rules here, not there.
 - `dockers.code-workspace` — VS Code multi-root workspace definition.
 - `.github/workflows/build-images.yml` — CI build/push workflow.
 - `.github/workflows/retag-image.yml` — manual, registry-side retag on Docker

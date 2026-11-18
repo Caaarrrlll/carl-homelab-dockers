@@ -81,6 +81,7 @@ the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
 - `docs/` — design notes.
 - `templates/` — Unraid Docker templates (`asa-wine.xml` = the standard for the ASA cluster servers).
 - `AGENTS.md` — contributor/agent overview, including the doc-alignment checklist.
+- `CLAUDE.md` — Claude Code entry point; imports `AGENTS.md` and adds local-environment notes.
 - `HISTORY.md` — dated record of significant changes and why they were made.
 - `ROADMAP.md` — known issues and improvements parked for later (completed
   items: `ROADMAP_HISTORY.md`).
