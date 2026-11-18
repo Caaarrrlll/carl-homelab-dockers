@@ -45,12 +45,59 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
       Syslog shows sshd forced-command sessions + `claude-readonly` entries.
     - Redaction pass (maintainer rule): `health` now looks up the host port
       with `docker port fluxer-aio 8080/tcp`, so the script holds no
-      server-specific port. Needs re-copy to Unraid (sha256 in the reply).
+      server-specific port. Re-copied and verified on Unraid via read-only
+      access 2026-11-18 (`health` -> "port 8080/tcp is not published").
   - [✓] 1c. Docs: CLAUDE.md (read-only access bullet), AGENTS supporting files,
     README layout (2026-11-18)
-- [ ] 2. Map the upstream images (no local Docker: registry blobs via curl)
-  - api, gateway, media-proxy, fluxer-server, static: file paths, runtime
-    libs, users, entrypoints, healthchecks; env each service gets in compose
+- [✓] 2. Map the upstream images (2026-11-18, release 2026.1118.90548; registry
+  configs + small layers read from ghcr, compose bundle read; nothing run)
+  - All Debian trixie (same glibc as our debian-base) except fluxer-static
+    (Alpine; only its files + Caddyfile are needed). What to copy:
+    - api (`fluxer-api@sha256:35b9…a2c3`): Node 26.13.0 (`/usr/local/bin/node`
+      + `/usr/local/lib/node_modules`, layer 2), app `/usr/src/app/fluxer_api`
+      (`node_modules` etc. layer 6, `dist` layer 7, `bin`), `/usr/src/app/tsconfigs`.
+      Run `node dist/AppEntrypoint.js`; worker = `dist/WorkerEntrypoint.js` or
+      `FLUXER_API_EMBEDDED_WORKER=true`. Needs ca-certificates; `/run/fluxer`
+      (0700). Health `GET /_health` on its port.
+    - gateway (`fluxer-gateway@sha256:824b…313b`): `/opt/fluxer_gateway`
+      release incl. its own ERTS (erts-16.4.0.7), so the 79 MB OTP layer is
+      not needed. Needs ca-certificates, curl, libstdc++6. Start
+      `bin/docker_entrypoint.sh` (sizes schedulers, requires
+      `FLUXER_ERLANG_COOKIE`; `FLUXER_ERLANG_NODE_NAME` default
+      `fluxer_gateway@127.0.0.1`, dist port `FLUXER_ERLANG_DIST_PORT` 8081,
+      epmd 4369). nofile 65536. Health `GET /_health/ready`.
+    - media-proxy (`fluxer-media-proxy@sha256:2742…ec65`): binary
+      `/usr/local/bin/fluxer-media-proxy` + own libs `/usr/local/lib`
+      (custom libheif; run `ldconfig`). apt: tini libcurl4t64 libvips42t64
+      libwebp7 libwebpmux3 libwebpdemux2 liblcms2-2 libyuv0 libde265-0
+      libdav1d7 libaom3 libjemalloc2, then `rm -f /usr/lib/*/libheif.so.1*`.
+      Env LD_PRELOAD=libjemalloc.so.2, MALLOC_CONF, VIPS_CONCURRENCY=1,
+      VIPS_DISC_THRESHOLD=1g. Health `fluxer-media-proxy healthcheck`.
+    - fluxer-server (`fluxer-server@sha256:43b5…e44`): `/usr/local/bin/fluxer-server`
+      + web app `/srv/app/static` (250 MB). apt: libjemalloc2. Runs
+      snowflakes,users,messages,gifs,unfurl,push,app-proxy,admin
+      (`FLUXER_SERVER_SERVICES`); ports via `FLUXER_SERVER_<SVC>__...` (bundle:
+      svc 18090-18094, admin 18083, app-proxy 8080). Health `fluxer-server healthcheck`.
+    - static (`fluxer-static@sha256:144c…1d263`): `/srv/fluxer-static`
+      (avatars, badges, desktop incl. spellcheck dictionaries, email, emoji,
+      web) + its Caddyfile (file_server, `/_health`, cache headers); serve from
+      the internal router Caddy instead of a second Caddy. MIME: Debian
+      `media-types` instead of Alpine `mailcap`.
+    - NATS 2.14 (JetStream `store_dir`, http 8222 `/healthz`), Meilisearch
+      v1.53 (`/meili_data`, `/health`), LiveKit v1.12.0 (config via
+      `LIVEKIT_CONFIG`/`LIVEKIT_KEYS`, webhook -> api `/webhooks/livekit`).
+  - Compose wiring: 188 shared env vars (`x-fluxer-env`); internal addresses
+    to rewrite to 127.0.0.1: `FLUXER_INTERNAL_API_ENDPOINT`,
+    `FLUXER_INTERNAL_MEDIA_PROXY_ENDPOINT`, `FLUXER_LIVEKIT_INTERNAL_URL`,
+    `FLUXER_NATS_URL`, `FLUXER_SEARCH_URL`, `FLUXER_KV_URL` (external Redis),
+    admin/unfurl endpoints in rust-server env, LiveKit webhook URL.
+  - Filesystem uploads: `FLUXER_STORAGE_BACKEND=filesystem`,
+    `FLUXER_STORAGE_ROOT`, media-proxy `FLUXER_MEDIA_PROXY_STORAGE_BACKEND=local`
+    + `_STORAGE_ROOT`; init creates `.staging/{tmp,multipart,trash}`, `.meta`,
+    `.layout` = `{"v":1}`; `FLUXER_S3_ENDPOINT` must be empty.
+  - Open for step 3: run everything as one configurable UID/GID (upstream
+    uses 65532 and 10001); exact `NEEDED` libs of node native modules
+    unverified (only provable by CI build + first start).
 - [ ] 3. Image `images/apps/fluxer-aio/`
   - [ ] 3a. Dockerfile on `caaarrrlll/debian-slim-baseimage`, multi-stage
     `COPY --from` pinned upstream digests + NATS/Meilisearch/LiveKit/Caddy
