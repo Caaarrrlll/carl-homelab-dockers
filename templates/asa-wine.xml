@@ -23,6 +23,7 @@ Host requirements:[br]
 - vm.max_map_count at least 256000; 1048576 recommended (the container sleeps and logs instructions if it is below 256000).[br]
 - NTSYNC=1: Unraid 7.3+ (kernel 6.14+) with 'modprobe ntsync' in /boot/config/go. Privileged mode exposes /dev/ntsync, so no --device flag is needed; if the module is missing the server falls back to ESync/FSync instead of failing to start.[br][br]
 Shared memory: Extra Parameters sets '--shm-size=4g' (Docker's default /dev/shm is only 64 MB), part of the fix attempt for idle crashes on newer maps. The start script sets the stack size itself (ulimit -s 8192).[br][br]
+GameAnalytics: '--tmpfs' gives each container its own small in-memory copy of ARK's usage-statistics folder (WINE64/.../AppData/Local/GameAnalytics). Shared by all servers it got corrupted and full, flooding the logs with 'database disk image is malformed' / 'Database too large'. It holds nothing related to saves and starts empty on every container start.[br][br]
 Stopping: the container saves the world over RCON (SaveWorld, then DoExit) before it exits. RCON listens only inside the container on RCON Port; never map that port. '--stop-timeout=60' gives the save up to 60 s before Docker force-kills it (Docker's default is 10 s).[br][br]
 Rollback: CI keeps the image it replaces as :previous and also pushes dated and per-commit tags. Run the 'Retag image' GitHub workflow (asa-wine, previous or a date tag -> latest) and Force Update, or change Repository to e.g. caaarrrlll/asa-wine:2026-11-17 and switch back to :latest later.[br][br]
 WARNING: DEBUG=1 prints passwords to the container log.</Overview>
@@ -30,7 +31,7 @@ WARNING: DEBUG=1 prints passwords to the container log.</Overview>
   <WebUI/>
   <TemplateURL>https://raw.githubusercontent.com/Caaarrrlll/carl-gaming-dockers/main/templates/asa-wine.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/Caaarrrlll/carl-gaming-dockers/main/images/games/asa-docker/asa.png</Icon>
-  <ExtraParams>--restart=unless-stopped --shm-size=4g --stop-timeout=60</ExtraParams>
+  <ExtraParams>--restart=unless-stopped --shm-size=4g --stop-timeout=60 --tmpfs /serverdata/serverfiles/WINE64/drive_c/users/steam/AppData/Local/GameAnalytics:rw,size=64m,mode=1777</ExtraParams>
   <PostArgs/>
   <CPUset/>
   <DateInstalled/>

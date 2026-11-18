@@ -1,18 +1,22 @@
 # Roadmap
 
-Known issues and improvements parked for later. Found during the 2026-11-17
-review of the whole repo (Fedora excluded; it's parked).
+Live roadmap: open and planned work only. Completed items are moved to
+`ROADMAP_HISTORY.md`.
+
+**Maintenance rule:** when an item is confirmed complete, move it to
+`ROADMAP_HISTORY.md` (one short entry) and record the fix in the relevant
+`audit.md` and, if significant, `HISTORY.md`. Do it as part of the task's
+clean boundary (see `RATE_LIMIT_TRACKER.md`), not later. Item numbers are
+stable and never reused; gaps are completed items.
 
 This file holds **code or doc changes still to make**. Checks to run on the
-live server go in `docs/housekeeping.md`. Item numbers are kept stable;
-gaps are items already done (all 2026-11-17): 2 per-server logs
-(`LOG_PREFIX`), 3 save on stop (RCON), 4 argument quoting, 5 permissions, 6 image labels, 7 rollback
-tags, 8 Fedora opt-in locally, 10 small script fixes, 11 base READMEs,
-12 template aligned with the live cluster, 13 workspace file. When an item is done, delete it here
-and record the fix in the relevant `audit.md` and, if significant, in
-`HISTORY.md`.
+live server go in `docs/housekeeping.md`.
 
-## Risk legend
+## Standing policy
+
+Applies to every item below and to new work.
+
+### Risk legend
 
 Each item has a **Risk** rating: the chance that making the change breaks a
 running container or the game data.
@@ -23,7 +27,7 @@ running container or the game data.
 | 🟡 Medium | Changes start-up or runtime behaviour, but failures are visible and easy to revert. | Push when you can watch one container start; check the log; pin the template to a dated/`sha-` tag to roll back. |
 | 🔴 High | Can stop servers from starting, lose progress, or corrupt the shared install. | Test on a single non-cluster container first, and only when you're home. Never during a pending ASA update. |
 
-## Design constraint: shared server files
+### Design constraint: shared server files
 
 **Confirmed setup:** all servers (one per map in the cluster) run from the
 **same** `/serverdata/serverfiles` install. This is deliberate: ASA is large,
@@ -91,39 +95,15 @@ needs a manual restart.
 ## Low priority
 
 ### 9. Possibly unused packages in the ASA image
+**Status: ⛔ BLOCKED by item 14 (2026-11-18).** A Proton/Proton-GE image may
+need `xvfb` (headless display) or similar, so don't remove anything until
+the Proton research says what a future image needs.
 **Risk: 🟡 Medium.** Removing a package Wine or SteamCMD quietly relies on
 would only show up at runtime.
 
 `screen` and `xvfb` are installed, but no script uses them. Test the server
 without them and remove them if nothing breaks (smaller image, faster
 `no-cache` builds). Keep `winbind` (Wine uses `ntlm_auth`).
-
-### 15. Corrupt GameAnalytics database in the logs
-**Risk: 🟢 Low.** It's ARK's built-in usage-statistics database (reports
-gameplay data to the developers); it holds nothing related to saves, configs
-or cluster data. Cosmetic: it only adds log noise, and isn't linked to the idle
-crashes as far as we know.
-
-Every ARK log shows repeated lines like
-`Debug/GameAnalytics : SQLITE3 FINALIZE ERROR: database disk image is malformed`
-and `fixMissingSessionEndEvents -- JSON error` (seen on Astraeos, 2026-11-17).
-Likely cause: all 13 servers share one install, so they probably share one
-GameAnalytics SQLite file and write to it at the same time, which corrupts it.
-
-1. **Find it**, with all ASA servers stopped:
-   `find /mnt/cache/appdata/ark-sa-new \( -iname '*gameanalytics*' -o -iname '*.sqlite*' -o -iname '*.db' \) 2>/dev/null`
-   (it's probably under `ShooterGame/Saved/` or inside the Wine prefix
-   `WINE64/drive_c/users/.../AppData/`).
-2. **Clean it:** rename it to `*.bak` rather than deleting it, start one
-   server, and check that ARK creates a fresh file and the errors are gone.
-3. **Expect it to come back** while 13 servers share the file. A lasting fix
-   would be one of:
-   - a way to turn GameAnalytics off (research a launch flag or ini
-     setting; none known yet);
-   - giving each container its own copy of that one folder through a
-     per-server path mapping over it (the same trick as a per-server
-     `Saved/Logs`), if the location allows it.
-4. Record the result in the ASA `audit.md` and close this item.
 
 ## Future / research
 
@@ -158,13 +138,11 @@ can run without the Steam client, so it may be worth another look.
 
 ## Suggested order
 
-0. **Test first:** nothing on this list starts until the servers have been
-   tested on the 2026-11-17 image changes (housekeeping item 7).
-1. 🟡 Item 9 (remove `screen`/`xvfb`), tested on one server.
-2. 🟢 Item 15 (GameAnalytics log noise) during any window when all servers are
-   stopped anyway.
+0. **Test first:** done 2026-11-18 (housekeeping items 5 + 7 closed). Item 15
+   (GameAnalytics log flood) done 2026-11-18, see `ROADMAP_HISTORY.md`.
+1. 🔭 **P1 (was P2):** item 14 (Wine vs Proton / Proton-GE research).
+2. ⛔ Item 9 (`screen`/`xvfb`) stays blocked until item 14's research is
+   done.
 3. ⏸️ Item 1 stays parked until a dedicated planning session.
-4. 🔭 Item 14 (Wine vs Proton research) whenever there's time; it doesn't
-   block anything.
 
 Rollback for any of these: ASA README → "Rolling back to an earlier image".

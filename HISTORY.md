@@ -7,6 +7,27 @@ long-running upgrade finishes, its tracking document is moved under
 `docs/history/2026-11-07-ntsync-wine11.md`) so entries sort chronologically,
 and referenced from this file.
 
+## 2026-11-18 — GameAnalytics log flood, agent tracking setup
+
+- **Problem:** every ASA server logged `SQLITE3 FINALIZE ERROR: database disk
+  image is malformed` and `Database too large. Event has been blocked.` every
+  ~8 s. Cause: ARK's GameAnalytics database
+  (`WINE64/drive_c/users/steam/AppData/Local/GameAnalytics/<key>/ga.sqlite3`,
+  6.7 MB) lives in the shared Wine prefix, so all 13 servers wrote to one
+  file. Harmless to saves, but it buried the useful log lines.
+- **Fix:** the template gives each container its own in-memory copy of that
+  folder (`--tmpfs …/GameAnalytics:rw,size=64m,mode=1777`): never shared,
+  empty on every start, no host folders, no image rebuild. Rolled out with a
+  new `asa-rollout.sh` on the Swap share (stop all with save → move the old
+  folder aside → `align-asa-templates.sh` → recreate one at a time with
+  Unraid's `update_container`, waiting for each SteamCMD step; only the
+  servers that were running are restarted). Verified live the same morning:
+  each container has its own `tmpfs` database, the shared folder stays empty,
+  and the error flood is gone. ROADMAP item 15 (now in `ROADMAP_HISTORY.md`).
+- Agent tracking adopted from the `angular-template` project:
+  `RATE_LIMIT_TRACKER.md` (+ history), `ROADMAP_HISTORY.md`, and AGENTS.md
+  rules for reading order, the tracker and verification.
+
 ## 2026-11-17 — ASA image cleanup, Unraid template, uncached CI
 
 - `images/games/asa-docker` moved further away from the generic ich777-style

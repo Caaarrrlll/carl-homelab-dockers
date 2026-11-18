@@ -82,6 +82,9 @@ the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
 - `templates/` — Unraid Docker templates (`asa-wine.xml` = the standard for the ASA cluster servers).
 - `AGENTS.md` — contributor/agent overview, including the doc-alignment checklist.
 - `HISTORY.md` — dated record of significant changes and why they were made.
-- `ROADMAP.md` — known issues and improvements parked for later.
+- `ROADMAP.md` — known issues and improvements parked for later (completed
+  items: `ROADMAP_HISTORY.md`).
+- `RATE_LIMIT_TRACKER.md` — live checklist of the current multi-step task
+  (completed: `RATE_LIMIT_TRACKER_HISTORY.md`).
 
 Each image directory has an `audit.md` tracking its snapshot and changes.

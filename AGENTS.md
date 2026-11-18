@@ -9,6 +9,25 @@ Overview of this repository for automated/agent contributors.
 It was created by importing the original per-image repositories with
 `git subtree`, so their history lives under `images/`.
 
+## Related instructions
+
+Read in this order when relevant to the task:
+
+1. This file (`AGENTS.md`): layout, build/CI, conventions, process.
+2. `RATE_LIMIT_TRACKER.md`: the active task checklist. Read it **before
+   starting any work** and resume from its first unchecked item (see
+   "Rate Limit Tracker" below).
+3. `ROADMAP.md`: the "Standing policy" block (risk legend, shared-install
+   constraint) before changing an image, template or script; then the open
+   items.
+4. `docs/housekeeping.md`: open checks on the live server, only when the
+   task touches the running system.
+
+Do **not** read `RATE_LIMIT_TRACKER_HISTORY.md`, `ROADMAP_HISTORY.md`,
+`HISTORY.md` or `docs/history/` unless the task needs past context (for
+example "why was X decided" or "when did Y change"). They are archives,
+not instructions, and reading them by default only fills the context.
+
 ## Layout
 
 | Path | Image | Purpose |
@@ -31,7 +50,11 @@ Supporting files:
   template verification, idle-crash confirmation). **Check/confirm these
   items later**; item 1 is a functional dependency on every Unraid reboot.
 - `ROADMAP.md` — known issues and improvement ideas that need a **code or
-  doc change** later, grouped by priority.
+  doc change** later, grouped by priority, plus the standing policy.
+- `ROADMAP_HISTORY.md` — archive of completed roadmap items.
+- `RATE_LIMIT_TRACKER.md` — live, resumable checklist of the current
+  multi-step task.
+- `RATE_LIMIT_TRACKER_HISTORY.md` — archive of completed task checklists.
 - `templates/asa-wine.xml` — Unraid Docker template for `caaarrrlll/asa-wine`:
   the **standard for the maintainer's ASA cluster** (verified against the 13
   live templates on 2026-11-17; defaults filled in for The Island, port slot
@@ -153,7 +176,8 @@ Apply whatever rows match the change, **in the same commit**:
 | Anything a future reader would ask "when/why did this change?" about | A dated entry in `HISTORY.md` (newest first, `## YYYY-MM-DD — <topic>`), with the **motivation** as well as the change. Extend today's entry rather than adding a second one for the same day. |
 | Files or folders at the repo root | "Layout" / "Supporting files" in this file and the root `README.md`. |
 | Something to verify later on the live server | A row in `docs/housekeeping.md`; move it to "Record" with a date once confirmed. |
-| A problem you found but aren't fixing now | An item in `ROADMAP.md`; delete it (and note the fix in the audit/history) once done. |
+| A problem you found but aren't fixing now | An item in `ROADMAP.md` (next free number, with a Risk rating). Once done, move it to `ROADMAP_HISTORY.md` and note the fix in the audit/history. |
+| A multi-step task | Its checklist in `RATE_LIMIT_TRACKER.md` first; when done, move it to `RATE_LIMIT_TRACKER_HISTORY.md`. |
 
 Change-log commit column: write `_(this change)_` while uncommitted, then
 replace it with the short hash once the commit exists, either in the next
@@ -169,6 +193,54 @@ touched (for example an env var) across `images/`, `templates/`, `README.md`,
   `2026-11-07-ntsync-wine11.md`) so files sort chronologically, reference it
   from `HISTORY.md`, and delete temp/superseded files. Carry any still-open
   verification work into `docs/housekeeping.md` instead of deleting it.
+
+## Rate Limit Tracker (mandatory)
+
+Applies to every multi-step task (image or script changes, template
+rollouts, investigations that lead to changes, research items). Sessions
+can end at any time (rate limits, context limits), so the tracker must
+always be enough to resume from.
+
+- At the start of every session, read `RATE_LIMIT_TRACKER.md` first. If it
+  has unchecked items, continue that task from its first unchecked item
+  before starting anything new.
+- Before starting a new big task, write its steps as a checklist in
+  `RATE_LIMIT_TRACKER.md` (one `[ ]` per step) and work top-down.
+- Size each checkbox as one resumable unit that a session can finish and
+  verify. Split bigger steps into indented sub-items up front.
+- Mark a step `[•]` **before** its first file edit and list the files it
+  touches (for example `[•] Step 3 — touching: start.sh, README.md`), so an
+  interrupted session can resume without reverse-engineering `git diff`.
+- Steps that need the maintainer (anything run on Unraid, live tests,
+  decisions) are marked `[⏳]` with exactly what to run or decide. Never
+  mark them `[✓]` until the maintainer has reported the result.
+- Update the checklist right after each step (`[•]` → `[✓]`), not in a
+  batch at the end.
+- Never record an outcome that wasn't verified on the current tree or the
+  live server (see "Verification"). If a session ends mid-task, the
+  checklist must show exactly what is done, in progress and pending.
+- Format: one short summary line per item; details (files, findings,
+  commands) go on indented `-` sub-bullets.
+- When the task is done, end at a clean boundary (all items checked, next
+  steps written down), move the section to `RATE_LIMIT_TRACKER_HISTORY.md`,
+  and move any finished `ROADMAP.md` item to `ROADMAP_HISTORY.md`.
+
+## Verification
+
+"Verified" means the checks for the change type were run on the current
+tree (or the live server) and passed. Record what was run.
+
+| Change type | Required checks |
+|---|---|
+| Any change | `git diff --check` |
+| Shell script (`*.sh`) | `bash -n <file>`; for changed logic, a stubbed simulation of the affected paths (as done for the stop handler) |
+| Unraid template / XML | Parse it (Python `xml.etree`, or `php` on Unraid); for the live templates, a dry run of `align-asa-templates.sh` on the redacted copies |
+| Workflow YAML | Parse it and re-read the `if:` conditions / path filters it affects |
+| Dockerfile / image script | Only CI can build (no local Docker): the build is verified when the Actions run is green; runtime behaviour only when the maintainer has tested it on Unraid |
+| Docs / tracker only | `git diff --check` |
+
+Anything not tested live must be labelled as such (for example "simulated,
+not tested on Unraid").
 
 ## Notes / gotchas
 

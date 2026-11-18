@@ -177,6 +177,15 @@ The live file may contain passwords, so don't paste that output anywhere.
 
 ## Resource limits (`ulimit` and shared memory)
 
+- **GameAnalytics (tmpfs):** ARK's built-in usage-statistics database lives
+  in the shared Wine prefix (`WINE64/drive_c/users/steam/AppData/Local/GameAnalytics`).
+  Shared by all servers, it got corrupted and full, and every server logged
+  `database disk image is malformed` / `Database too large` every few
+  seconds. The template mounts a small per-container RAM folder over it:
+  `--tmpfs /serverdata/serverfiles/WINE64/drive_c/users/steam/AppData/Local/GameAnalytics:rw,size=64m,mode=1777`.
+  It holds nothing related to saves and starts empty on every container
+  start. The old shared file was kept as `GameAnalytics.bak-<time>` on the
+  host by the rollout.
 - **Shared memory:** Docker gives containers only 64 MB of `/dev/shm` by
   default. The template's Extra Parameters add `--shm-size=4g`, as part of
   the attempt to stop the idle crashes on newer maps (see Host requirements).

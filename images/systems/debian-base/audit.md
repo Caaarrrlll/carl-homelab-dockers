@@ -22,7 +22,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
-| 2026-11-17 | _(this change)_ | source label → monorepo; README rewritten; CI rollback tags | `org.opencontainers.image.source` now points at `carl-gaming-dockers`. CI also pushes `trixie-YYYY-MM-DD` and `trixie-sha-<commit>`. |
+| 2026-11-17 | `6b930a6` | source label → monorepo; README rewritten; CI rollback tags | `org.opencontainers.image.source` now points at `carl-gaming-dockers`. CI also pushes `trixie-YYYY-MM-DD` and `trixie-sha-<commit>`. |
 | 2026-06-17 | `74c9190` | update docker | |
 | 2026-04-25 | `bf9c21f` | updated readme and finish base image | |
 | 2026-04-25 | `66a9c3b` | Add docker and blank readme | |
