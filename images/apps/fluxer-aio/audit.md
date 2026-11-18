@@ -59,6 +59,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
+| 2026-11-18 | _(this change)_ | Self-test: check only linux-x64 glibc node prebuilds | First CI build (run 44372472991) failed only on argon2's musl prebuild, which Node never loads on glibc. All binaries, versions, Caddyfile and env checks passed. |
 | 2026-11-18 | `b144c4a` | New image | Fluxer 2026.1118.90548; see `RATE_LIMIT_TRACKER.md` (fluxer-aio) for the research and simulation record. |
 
 ## Review checklist

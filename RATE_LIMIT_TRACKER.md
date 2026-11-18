@@ -146,8 +146,17 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
     fluxer-aio. YAML parsed (PyYAML in scratchpad), `if:` conditions re-read.
     AGENTS/README CI text, HISTORY entry, template (step 4) committed with
     `[skip ci]` so the workflow edit doesn't rebuild the ASA chain.
-  - [ ] 5b. Push; dispatch `Build and push images` with `fluxer_only=true`;
-    green run = build + self-test passed. On failure: read the log, fix, repeat.
+  - Pushed 2026-11-18 (`a571720`, all `[skip ci]`, so no run started).
+  - gh CLI installed + logged in by maintainer 2026-11-18 (full path
+    `C:\Program Files\GitHub CLI\gh.exe` until VS Code restarts).
+  - Run 44372472991: only fluxer-aio steps ran (fluxer_only works); build OK
+    until the self-test, which failed only on argon2's `prebuilds/linux-x64/
+    argon2.musl.node` (never loaded on glibc). Passed: all binary/gateway
+    ldd, versions (node 26.13.0, nats 2.14.10, meili 1.53.0, livekit 1.12.0,
+    caddy 2.11.9), `caddy validate`, env eval. Fix: self-test skips non
+    linux-x64-glibc prebuilds, requires >= 1 checked module.
+  - [•] 5b. Re-dispatch after the self-test fix; waiting for the result. Green = build + self-test passed. On failure: read the
+    log, fix, push `[skip ci]`, dispatch again.
 - [ ] 6. CI: scheduled check for new Fluxer releases -> bump digests/rebuild
 - [ ] 7. [⏳] Maintainer prep on Unraid: create PG role + DB `fluxer`; Caddy
   site -> `<unraid-ip>:<host-port>`; DNS; router forwards TCP 7881 + UDP 7882

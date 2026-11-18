@@ -34,10 +34,23 @@ while IFS= read -r f; do check_ldd "$f"; done < <(
 	find /opt/fluxer_gateway -type f \( -name 'beam.smp' -o -name '*.so' \) )
 
 say "node native modules"
+# Packages such as argon2 ship prebuilds for every platform (prebuilds/<os-arch>/,
+# glibc and musl). Node loads only the linux-x64 glibc one here, so the others
+# are skipped; a package without a usable linux-x64 glibc build would fail at
+# run time, so at least one checked module is required.
 n=0
-while IFS= read -r f; do check_ldd "$f"; n=$((n + 1)); done < <(
-	find /usr/src/app -type f -name '*.node' )
-say "checked $n native modules"
+while IFS= read -r f; do
+	case "$f" in
+		*/prebuilds/linux-x64/*musl*) continue ;;
+		*/prebuilds/linux-x64/*) ;;
+		*/prebuilds/*) continue ;;
+	esac
+	check_ldd "$f"
+	say "checked: ${f#/usr/src/app/}"
+	n=$((n + 1))
+done < <(find /usr/src/app -type f -name '*.node')
+say "checked $n native modules for linux-x64 glibc"
+[ "$n" -gt 0 ] || { say "FAIL no linux-x64 glibc native modules found (layout changed?)"; status=1; }
 
 say "versions"
 node --version
