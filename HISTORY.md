@@ -36,7 +36,7 @@ and referenced from this file.
 - **Fix:** the template gives each container its own in-memory copy of that
   folder (`--tmpfs …/GameAnalytics:rw,size=64m,mode=1777`): never shared,
   empty on every start, no host folders, no image rebuild. Rolled out with a
-  new `asa-rollout.sh` on the Swap share (stop all with save → move the old
+  new `asa-rollout.sh` on a network share (stop all with save → move the old
   folder aside → `align-asa-templates.sh` → recreate one at a time with
   Unraid's `update_container`, waiting for each SteamCMD step; only the
   servers that were running are restarted). Verified live the same morning:
@@ -81,7 +81,7 @@ and referenced from this file.
   RCON port.
 - Live templates: a dead-template cleanup removed 26 unused Unraid templates
   (Scryer and Weaver kept). The 13 ASA templates get aligned to the standard
-  by `align-asa-templates.sh` on the Swap share. That script also fixes Gen1's
+  by `align-asa-templates.sh` on a network share. That script also fixes Gen1's
   ports (it used Bjarnheim's 7771/27011), adds NTSYNC and `--shm-size=4g`
   everywhere, fixes the "Scorched" spelling, removes stale variables, and
   applies the mod decisions: Lily's Reusables (930436) parked and removed,

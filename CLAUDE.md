@@ -24,10 +24,27 @@ working with Claude Code in this repo.
   things.
 - **No local Docker.** Never try to `docker build`/`push`; image builds are
   verified only by a green GitHub Actions run (`gh run list` / `gh run view`).
-- **No access to the Unraid server.** Anything that must run there (live
-  tests, applying template changes to the live containers, reboots) is a `[⏳]`
-  tracker step with the exact command for the maintainer. Never mark it `[✓]`
-  until they report the result.
+- **No write access to the Unraid server.** Anything that must run there
+  (live tests, applying template changes to the live containers, reboots) is a
+  `[⏳]` tracker step with the exact command for the maintainer. Never mark it
+  `[✓]` until they report the result.
+- **Temporary read-only access (since 2026-11-18, for the `fluxer-aio`
+  build; revoke at tracker step 10, then delete this bullet).** A restricted
+  SSH key runs only `scripts/unraid-readonly.sh` on the server:
+  `ssh -i <key> -o IdentitiesOnly=yes -o BatchMode=yes root@<unraid-host> "<request>"`
+  with `<request>` one of `help`, `ps`, `logs <c> [n]`, `inspect <c>`,
+  `stats`, `ls [subpath]`, `health` (containers: `fluxer-aio`, `Caddy`,
+  `Redis`). The real key path, host and share are in Claude's memory, not
+  here. Label anything checked this way "verified on Unraid via read-only
+  access". Never try to work around a refusal; ask the maintainer instead.
+  The script on Unraid is a copy at `/boot/config/claude-readonly/`: after
+  editing it here, copy it to the maintainer's network share and give them
+  the `cp` + `sha256sum` commands.
+- **Redaction (maintainer rule, 2026-11-18):** nothing committed here may
+  name the maintainer's server: no hostnames, IPs, share names, real appdata
+  paths, their container names or port choices, key paths, or weaknesses of
+  their setup. Use placeholders (`<unraid-host>`, `<share>`, `<host-port>`).
+  This includes the tracker and history files. Grep the diff before commits.
 - Python is available as `python` for XML checks, e.g.
   `python -c "import xml.etree.ElementTree as E; E.parse('templates/asa-wine.xml')"`.
 - `core.autocrlf` is `false` and there is no `.gitattributes`: keep `*.sh`

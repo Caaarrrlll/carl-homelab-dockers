@@ -56,6 +56,10 @@ Supporting files:
   Hub (rollback / pin a build) without local Docker.
 - `scripts/docker-updater.bat` — builds and pushes all images (Windows).
 - `scripts/docker-updater.sh` — builds and pushes all images (Linux/macOS).
+- `scripts/unraid-readonly.sh` — SSH forced command for a temporary,
+  revocable read-only key on Unraid (allowlisted `docker ps`/`logs`/`inspect`
+  without env/`stats`, `ls` under one appdata folder). Runs from the flash
+  drive, not from this repo; see the header for install and revocation.
 - `docs/housekeeping.md` — open **verification** items on the running system
   (NTSYNC reboot persistence, under-load re-check, parked Fedora work,
   template verification, idle-crash confirmation). **Check/confirm these

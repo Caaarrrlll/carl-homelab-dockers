@@ -82,7 +82,8 @@ the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
 
 - `images/systems/` — shared runtime/base images.
 - `images/games/` — per-game images layered on the system images.
-- `scripts/` — build/push helpers.
+- `scripts/` — build/push helpers, plus `unraid-readonly.sh` (allowlist for
+  a temporary read-only SSH key on the Unraid host).
 - `docs/` — design notes.
 - `templates/` — bare Unraid Docker templates to copy into
   `/boot/config/plugins/dockerMan/templates-user/` and fill in: `asa-wine.xml`

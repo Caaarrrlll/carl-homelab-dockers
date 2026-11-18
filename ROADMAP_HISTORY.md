@@ -21,7 +21,7 @@ roadmap. Item numbers are never reused.
 - **Fix:** template Extra Parameters `--tmpfs
   /serverdata/serverfiles/WINE64/drive_c/users/steam/AppData/Local/GameAnalytics:rw,size=64m,mode=1777`:
   a private in-memory folder per container, empty on every start; no image
-  change. Rolled out with `asa-rollout.sh` + `align-asa-templates.sh` (Swap
+  change. Rolled out with `asa-rollout.sh` + `align-asa-templates.sh` (network
   share); the script only restarts the servers that were running.
 - **Rejected:** an image-made symlink to `/tmp` (needs a rebuild; dangling
   link on rollback).
