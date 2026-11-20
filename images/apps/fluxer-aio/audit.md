@@ -51,6 +51,9 @@
 - The api logs `permission denied to examine "shared_preload_libraries"`
   when the Fluxer role can't read server settings (shared Postgres).
   Harmless; README suggests `GRANT pg_read_all_settings TO fluxer;`.
+- Bots verified 2026-11-20 (maintainer): the external bot (botsu) posts
+  Twitch-live, YouTube-upload and YouTube-live alerts on this instance via
+  the API and gateway, with link previews.
 - Optional integrations (Klipy GIFs, YouTube previews) verified working
   2026-11-20. After adding a key, clients must reload: the app reads
   `services.gif_enabled` / `youtube_enabled` only when it starts.
