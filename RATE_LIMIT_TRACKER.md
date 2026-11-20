@@ -17,6 +17,11 @@ done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintai
 watch live (PR #1 open). Open: step 10 (revoke the SSH key: NOT yet,
 maintainer's call). ROADMAP item 16 (CI redesign) must keep the release
 watch working (it relies on a push to main rebuilding fluxer-aio).
+**On hold 2026-11-20:** the maintainer is doing the shared-Postgres conversion
+(separate project) first, then returns for ROADMAP item 17 (backup -> upgrade
+-> verify -> clean up) before merging PR #1. After the conversion: check the
+`fluxer` database/role came across and the container's Postgres settings
+still match (read-only `logs`/`inspect`/`health`).
 
 Fluxer in one Unraid container, using the maintainer's existing Postgres 18, Redis and
 Caddy (reached via the host IP). Research and decisions:

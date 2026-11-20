@@ -225,7 +225,10 @@ can run without the Steam client, so it may be worth another look.
 1. 📋 **Next:** item 16 (list-driven CI, monthly Debian rebuild, remove the
    local build scripts), after the fluxer-aio task closes.
 2. 📋 **Before merging fluxer-aio's first release PR:** item 17 (backup ->
-   upgrade -> verify -> clean up).
+   upgrade -> verify -> clean up). The maintainer does the shared-Postgres
+   conversion (separate project) first (2026-11-20); item 17 is not blocked
+   by it, but its `pg_dump` client must match the server's major version
+   after the conversion.
 3. 🔭 **P1 (was P2):** item 14 (Wine vs Proton / Proton-GE research).
 4. ⛔ Item 9 (`screen`/`xvfb`) stays blocked until item 14's research is
    done.
