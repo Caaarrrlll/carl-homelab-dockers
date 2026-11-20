@@ -79,7 +79,9 @@ wine → asa and fluxer-aio, a Wine change rebuilds wine → asa, a fluxer-aio
 change rebuilds fluxer-aio only, and a Fedora change rebuilds Fedora only. Tag
 pushes and manual dispatches rebuild debian → wine → asa and fluxer-aio; tick
 `fluxer_only` on a manual run to build just fluxer-aio. Fedora is excluded
-unless you tick `build_fedora` on a manual run. Markdown
+unless you tick `build_fedora` on a manual run. New Fluxer releases arrive as
+a pull request from the **Fluxer release watch** workflow (weekly, or Actions →
+Fluxer release watch → Run workflow); merging it rebuilds fluxer-aio. Markdown
 files (READMEs, `audit.md`, docs) never trigger a rebuild; add `[skip ci]` to a
 commit message to skip the workflow entirely. Every
 image is pushed as `latest` plus rollback tags `YYYY-MM-DD` and

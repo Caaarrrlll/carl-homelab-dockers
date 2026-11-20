@@ -156,15 +156,26 @@ first service that fails its own health endpoint.
 
 ## Updating to a new Fluxer release
 
-1. Download the release's compose bundle, update `upstream/RELEASE` (URL +
-   SHA-256).
-2. Copy the image digests from its `docker-compose.yml` /
-   `rust-server.compose.yml` into the Dockerfile `*_IMAGE` arguments.
-3. `python upstream/gen-env.py <extracted-bundle> upstream/env` and review
-   the diff (new variables, changed internal addresses: the generator stops
-   on any address it can't map).
-4. Update `audit.md`, push, wait for a green CI build, then update the
-   container on Unraid.
+Fluxer publishes releases often; fluxer-aio follows them through a **pull
+request**, never automatically:
+
+1. The **Fluxer release watch** workflow runs every Monday (or by hand:
+   Actions → Fluxer release watch → Run workflow, optionally with a specific
+   bundle tag). If there is a newer compose bundle it runs
+   `upstream/bump-release.py`, which updates `upstream/RELEASE`, the
+   Dockerfile `*_IMAGE` digests (and Meilisearch, if the bundle moves to a new
+   minor version), regenerates `upstream/env/` and adds an `audit.md` row.
+2. It test-builds the image (including the self-test) without pushing, then
+   opens or updates a pull request whose description lists the changed
+   images and every added/removed/changed environment variable.
+3. Review it, merge it: the push to `main` rebuilds and publishes
+   `fluxer-aio`. Then update the container on Unraid (Advanced View →
+   force update).
+
+By hand, the same bump is `python upstream/bump-release.py [--release <tag>]`
+(it needs network access; no Docker). It stops with an error rather than
+guessing when the bundle changes in a way it doesn't understand (for example
+an internal address `gen-env.py` can't map).
 
 Fluxer database migrations run on start; back up Postgres and `/data`
 before updating.

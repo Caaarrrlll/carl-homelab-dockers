@@ -164,9 +164,18 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
     linux-x64 glibc); pushed `fluxer-aio:latest`, `:2026-11-18`,
     `:sha-63a3295` (715 MB compressed, digest sha256:e52e9dc2…417a). Green = build + self-test passed. On failure: read the
     log, fix, push `[skip ci]`, dispatch again.
-- [ ] 6. CI: scheduled check for new Fluxer releases -> bump digests/rebuild
-  (deferred until after the live test in step 8: automate updates only once
-  the image is known to run)
+- [•] 6. Release watch (2026-11-20; touching: upstream/bump-release.py,
+  .github/workflows/fluxer-release-watch.yml, AGENTS/README, fluxer README,
+  audit, HISTORY)
+  - Weekly (Mon 05:17 UTC) + manual; finds the newest bundle via
+    docs.fluxer.com/compose/latest; bump script updates RELEASE, Dockerfile
+    digests (+ Meilisearch on a new minor), env, audit; test-build without
+    push; opens/updates a PR from `auto/fluxer-release` (falls back to a
+    compare link if Actions may not create PRs: repo setting currently OFF).
+  - Tested on a scratch copy: real bump 90548 -> 162713 (5 digests, env
+    unchanged), up-to-date re-run (`changed=false`), Meilisearch lookup.
+    Workflow YAML parsed; script py_compile OK.
+  - [ ] Commit, then first real run (manual dispatch) -> PR for 162713.
 - [✓] 7. Maintainer prep on Unraid (2026-11-18): PG role + DB `fluxer`, reverse
   proxy site, DNS, router forwards TCP 7881 + UDP 7882; personal pre-filled
   template + proxy config staged on the maintainer's share (outside the repo).

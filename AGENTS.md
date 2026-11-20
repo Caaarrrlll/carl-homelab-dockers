@@ -62,6 +62,11 @@ Supporting files:
 - `.github/workflows/build-images.yml` — CI build/push workflow.
 - `.github/workflows/retag-image.yml` — manual, registry-side retag on Docker
   Hub (rollback / pin a build) without local Docker.
+- `.github/workflows/fluxer-release-watch.yml` — weekly (Mondays) and manual:
+  if Fluxer published a newer compose bundle, runs
+  `images/apps/fluxer-aio/upstream/bump-release.py`, test-builds fluxer-aio
+  (no push) and opens/updates a pull request from `auto/fluxer-release`.
+  Merging it is what rebuilds and publishes the image.
 - `scripts/docker-updater.bat` — builds and pushes all images (Windows).
 - `scripts/docker-updater.sh` — builds and pushes all images (Linux/macOS).
 - `scripts/unraid-readonly.sh` — SSH forced command for a temporary,

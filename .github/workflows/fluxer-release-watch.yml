@@ -1,0 +1,96 @@
+name: Fluxer release watch
+
+# Weekly (and on demand): if Fluxer published a newer compose bundle, bump
+# images/apps/fluxer-aio to it (upstream/bump-release.py), test-build the
+# image (no push) and open or update a pull request. Nothing reaches Docker
+# Hub until the maintainer merges the PR: that push to main runs
+# "Build and push images", which rebuilds fluxer-aio.
+#
+# Opening the PR needs Settings -> Actions -> General -> "Allow GitHub Actions
+# to create and approve pull requests". Without it the branch is still pushed
+# and the run summary links to "create pull request".
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"   # Mondays 05:17 UTC
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Bundle tag to move to (e.g. fluxer-release@2026.1118.162713); empty = latest
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: fluxer-release-watch
+  cancel-in-progress: false
+
+env:
+  BRANCH: auto/fluxer-release
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bump to the newest bundle
+        id: bump
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_INPUT: ${{ inputs.release }}
+        run: |
+          args=(--summary "$RUNNER_TEMP/summary.md")
+          [ -n "$RELEASE_INPUT" ] && args+=(--release "$RELEASE_INPUT")
+          python3 -I images/apps/fluxer-aio/upstream/bump-release.py "${args[@]}"
+
+      - name: Nothing to do
+        if: steps.bump.outputs.changed != 'true'
+        run: echo "fluxer-aio is on the newest bundle (${{ steps.bump.outputs.release }})." >> "$GITHUB_STEP_SUMMARY"
+
+      # Test build only (no push): catches a broken bump before the PR exists.
+      # The image's own self-test (fluxer-aio-selftest) runs inside this build.
+      - name: Set up Docker Buildx
+        if: steps.bump.outputs.changed == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test-build fluxer-aio
+        if: steps.bump.outputs.changed == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: images/apps/fluxer-aio
+          pull: true
+          no-cache: true
+          push: false
+
+      - name: Push branch and open/update the pull request
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE: ${{ steps.bump.outputs.release }}
+        run: |
+          title="fluxer-aio: Fluxer ${RELEASE#fluxer-release@}"
+          { cat "$RUNNER_TEMP/summary.md"
+            echo
+            echo "Test build (no push) and image self-test passed in run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
+          } > "$RUNNER_TEMP/body.md"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add -A images/apps/fluxer-aio
+          git commit -q -m "$title" -m "Automated by the Fluxer release watch workflow (upstream/bump-release.py)."
+          git push -f origin "$BRANCH"
+          cat "$RUNNER_TEMP/body.md" >> "$GITHUB_STEP_SUMMARY"
+          if gh pr view "$BRANCH" --json state --jq .state 2>/dev/null | grep -qx OPEN; then
+            gh pr edit "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+            echo "Updated the open pull request." >> "$GITHUB_STEP_SUMMARY"
+          elif gh pr create --base main --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"; then
+            echo "Opened a pull request." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Could not open a pull request (Actions may not be allowed to create PRs). Branch $BRANCH was pushed."
+            echo "Create the pull request: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/main...$BRANCH?expand=1" >> "$GITHUB_STEP_SUMMARY"
+          fi

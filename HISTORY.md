@@ -24,6 +24,13 @@ and referenced from this file.
   `docker-updater` scripts will be removed: GitHub Actions is the only build
   path, and a move off GitHub would mean porting CI, not reviving them.
 - **Process rule:** doc-only commits always carry `[skip ci]`.
+- **Fluxer release watch.** Fluxer publishes several bundles a day, so
+  fluxer-aio does not rebuild automatically on each one. A weekly (and manual)
+  workflow bumps to the newest bundle with `upstream/bump-release.py`,
+  test-builds it and opens a pull request; merging is the maintainer's
+  decision, because Fluxer migrates its database on start. The bundle is
+  found via `docs.fluxer.com/compose/latest`, since Fluxer's GitHub releases
+  also include desktop and per-service releases.
 
 ## 2026-11-18 — GameAnalytics log flood, agent tracking setup, repo rename, fluxer-aio
 
