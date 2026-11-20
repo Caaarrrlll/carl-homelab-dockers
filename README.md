@@ -105,6 +105,8 @@ the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
   `caddy.xml` (Caddy with the Cloudflare DNS module, upstream image). Generic defaults only, no server-specific details.
 - `AGENTS.md` — contributor/agent overview, including the doc-alignment checklist.
 - `CLAUDE.md` — Claude Code entry point; imports `AGENTS.md` and adds local-environment notes.
+- `.serena/` — config for the Serena code-navigation tool used by coding
+  agents (local cache and overrides are git-ignored).
 - `HISTORY.md` — dated record of significant changes and why they were made.
 - `ROADMAP.md` — known issues and improvements parked for later (completed
   items: `ROADMAP_HISTORY.md`).

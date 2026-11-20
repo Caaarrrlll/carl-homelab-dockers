@@ -59,6 +59,10 @@ Supporting files:
   adds only Claude-specific notes (local environment, guardrail summary).
   Keep project rules here, not there.
 - `dockers.code-workspace` — VS Code multi-root workspace definition.
+- `.serena/` — project config for the [Serena](https://github.com/oraios/serena)
+  code-navigation tool used by coding agents (`project.yml`, bash language
+  server). Its own `.gitignore` keeps `cache/` and `project.local.yml`
+  (machine-local overrides) out of git. Keep committed files LF-only.
 - `.github/workflows/build-images.yml` — CI build/push workflow.
 - `.github/workflows/retag-image.yml` — manual, registry-side retag on Docker
   Hub (rollback / pin a build) without local Docker.
