@@ -13,9 +13,10 @@ done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintai
 
 ## Active task — build `caaarrrlll/fluxer-aio` (2026-11-18)
 
-**Status 2026-11-20:** steps 1-5 and 7-9 done; fluxer-aio runs healthy.
-Open: step 6 (release-watch rebuilds; to be folded into ROADMAP item 16, the
-CI redesign) and step 10 (revoke the SSH key: NOT yet, maintainer's call).
+**Status 2026-11-20:** steps 1-9 done; fluxer-aio runs healthy; release
+watch live (PR #1 open). Open: step 10 (revoke the SSH key: NOT yet,
+maintainer's call). ROADMAP item 16 (CI redesign) must keep the release
+watch working (it relies on a push to main rebuilding fluxer-aio).
 
 Fluxer in one Unraid container, using the maintainer's existing Postgres 18, Redis and
 Caddy (reached via the host IP). Research and decisions:
@@ -164,9 +165,7 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
     linux-x64 glibc); pushed `fluxer-aio:latest`, `:2026-11-18`,
     `:sha-63a3295` (715 MB compressed, digest sha256:e52e9dc2…417a). Green = build + self-test passed. On failure: read the
     log, fix, push `[skip ci]`, dispatch again.
-- [•] 6. Release watch (2026-11-20; touching: upstream/bump-release.py,
-  .github/workflows/fluxer-release-watch.yml, AGENTS/README, fluxer README,
-  audit, HISTORY)
+- [✓] 6. Release watch (2026-11-20; commits `782aa6b`, `6b95855`)
   - Weekly (Mon 05:17 UTC) + manual; finds the newest bundle via
     docs.fluxer.com/compose/latest; bump script updates RELEASE, Dockerfile
     digests (+ Meilisearch on a new minor), env, audit; test-build without
@@ -175,7 +174,12 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
   - Tested on a scratch copy: real bump 90548 -> 162713 (5 digests, env
     unchanged), up-to-date re-run (`changed=false`), Meilisearch lookup.
     Workflow YAML parsed; script py_compile OK.
-  - [ ] Commit, then first real run (manual dispatch) -> PR for 162713.
+  - Maintainer allowed Actions to create PRs (repo setting, 2026-11-20).
+  - First real run 44715287210 GREEN: bump + test build + self-test passed,
+    opened PR #1 "fluxer-aio: Fluxer 2026.1118.162713" (5 digests, env
+    unchanged). Merging it is the maintainer's call; after merge: CI
+    rebuild, force update on Unraid. (The PR's audit row says
+    `_(this change)_`; replace with the merge hash in the next audit change.)
 - [✓] 7. Maintainer prep on Unraid (2026-11-18): PG role + DB `fluxer`, reverse
   proxy site, DNS, router forwards TCP 7881 + UDP 7882; personal pre-filled
   template + proxy config staged on the maintainer's share (outside the repo).
