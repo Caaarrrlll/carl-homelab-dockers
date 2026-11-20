@@ -13,6 +13,14 @@ done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintai
 
 ## Active task — build `caaarrrlll/fluxer-aio` (2026-11-18)
 
+**PAUSED 2026-11-18 by the maintainer** (fluxer-aio deployed, text chat works).
+Resume at step 8: (a) get the `fluxer-aio-healthcheck` output from the
+maintainer and fix the probe that makes Docker report `unhealthy`; (b) voice
+test from two devices, one on mobile data. The read-only SSH key and SSH on
+the server stay enabled until step 10.
+Uncommitted: this tracker update and the fluxer-aio README ("bring your own
+Postgres/Redis/reverse proxy" callout + setup-token note), docs only.
+
 Fluxer in one Unraid container, using the maintainer's existing Postgres 18, Redis and
 Caddy (reached via the host IP). Research and decisions:
 `RATE_LIMIT_TRACKER_HISTORY.md` ("Fluxer / Stoat"). Upstream reference:
@@ -163,10 +171,51 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
 - [ ] 6. CI: scheduled check for new Fluxer releases -> bump digests/rebuild
   (deferred until after the live test in step 8: automate updates only once
   the image is known to run)
-- [ ] 7. [⏳] Maintainer prep on Unraid: create PG role + DB `fluxer`; Caddy
-  site -> `<unraid-ip>:<host-port>`; DNS; router forwards TCP 7881 + UDP 7882
-- [ ] 8. [⏳] First start + live test: text, voice (required), screen share
-  (optional); recorded via read-only access + maintainer report
+- [✓] 7. Maintainer prep on Unraid (2026-11-18): PG role + DB `fluxer`, reverse
+  proxy site, DNS, router forwards TCP 7881 + UDP 7882; personal pre-filled
+  template + proxy config staged on the maintainer's share (outside the repo).
+- [•] 8. First start + live test (verified on Unraid via read-only access +
+  maintainer report)
+  - First start: all 8 services up; init OK; `/data` owned 99:100,
+    `secrets.env` 0600 root. One problem: PG role password didn't match the
+    template -> api fatal "password authentication failed"; fixed by the
+    maintainer with `\password fluxer` (no restart needed; s6 retried).
+    After that: users/messages connected (pool 5), api serving, gateway got
+    its config, embedded worker runs jobs (`sweepVoiceParticipants` OK),
+    no errors/warnings in the log; ~545 MB RAM idle.
+  - [✓] Setup token accepted, admin account created, maintainer is in a
+    channel they created: **text works** (2026-11-18). Note: the setup page
+    tells rexctl users how to show the token; fluxer-aio users read it from
+    `/data/secrets.env` (now in the README, uncommitted).
+  - [ ] Docker health shows `unhealthy` although every service works: one
+    probe in `fluxer-aio-healthcheck` is wrong. Waiting for the maintainer's
+    `docker exec fluxer-aio /usr/local/bin/fluxer-aio-healthcheck` output.
+  - [ ] Voice call (required); screen share (optional).
+  - Skipped for now (optional, can be added any time, admin panel takes
+    priority over env): Klipy API key (`FLUXER_KLIPY_API_KEY`, GIF search
+    stays off until set) and YouTube Data API key (`FLUXER_YOUTUBE_API_KEY`,
+    v3 enabled, restriction None/IP). Offer: add both as masked optional
+    fields to the repo template.
+- Maintainer decisions 2026-11-20 (after reviewing how the catalogue holds up):
+  - Repo focus stays game servers; apps (Fluxer, bot) are a secondary area:
+    light doc touch only.
+  - Remove `scripts/docker-updater.{sh,bat}` (+ VS Code task, DOCKERHUB_USER
+    docs/guardrails): CI is the build path. Note (not a roadmap item): if the
+    repo ever leaves GitHub, expand CI instead of reviving local scripts.
+  - fluxer-aio must keep rebuilding when its base (debian-base) changes
+    (already true; keep in the CI redesign).
+  - Infrastructure docs (shared Postgres/Redis/Caddy) parked; extend later.
+  - fluxer-aio itself is considered finished and working; future changes are
+    infrastructure-side.
+  - Bot = separate public repo `Caaarrrlll/botsu` (Rust, Discord + Fluxer),
+    with its own CI/image (`caaarrrlll/botsu`, Debian bookworm base), docs and
+    Unraid template. Self-contained: SQLite in `/data`, no Postgres/Redis/
+    proxy. Uses fluxer-aio via `FLUXER_URL` -> `/.well-known/fluxer` and
+    LiveKit; its roadmap records bot voice through the self-hosted Fluxer's
+    LiveKit working on 2026-11-19. Stays in its own repo (matches HISTORY);
+    this repo only links to it.
+  - Proposed next task: list-driven CI (images list + planner + build levels),
+    removing the updater scripts in the same task. Awaiting go-ahead.
 - [ ] 9. Docs: root README catalogue + layout, AGENTS layout/CI, HISTORY
   entry; ROADMAP items: list-driven CI (maintainer's own Redis hardening
   is noted in Claude's memory, not in the repo)

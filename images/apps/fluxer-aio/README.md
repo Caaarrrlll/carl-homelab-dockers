@@ -14,6 +14,14 @@ containers (or the `rexctl` installer). fluxer-aio runs the Fluxer parts in
 | A small internal router (Caddy, plain HTTP) and the static web files | A **reverse proxy** with TLS (Caddy, nginx, …) and a domain |
 | Uploads stored as files under `/data` (no S3 / SeaweedFS) | |
 
+> **Bring your own Postgres, Redis and reverse proxy.** fluxer-aio does
+> **not** include a database or a TLS proxy. It expects them to already run
+> as **standalone** services (on Unraid: their own containers), for example
+> a Postgres container, a Redis/Valkey container and a Caddy container that
+> holds the certificate for your domain. The container will not start
+> without the Postgres and Redis settings, and Fluxer is unusable without a
+> proxy serving HTTPS. See [Requirements](#requirements).
+
 It is not affiliated with or supported by the Fluxer project. Problems with
 this image belong here, not upstream.
 
@@ -106,7 +114,9 @@ differs from the file).
    token** (`[fluxer-aio-init] first start: setup token …`); it is also in
    `/data/secrets.env` as `FLUXER_SETUP_TOKEN`.
 3. Open `https://<FLUXER_DOMAIN>` and enter the token to create the first
-   admin account.
+   admin account. The setup page talks about `rexctl` (Fluxer's own
+   installer); ignore that. If the log has scrolled past the token, read it
+   with `grep FLUXER_SETUP_TOKEN <data path>/secrets.env` on the host.
 
 Missing required settings stop the container with a message naming them.
 
