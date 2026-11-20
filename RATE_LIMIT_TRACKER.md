@@ -220,11 +220,12 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
   - [✓] Voice: bot voice through fluxer-aio's LiveKit works (botsu roadmap,
     2026-11-19). Person-to-person call from outside the LAN and screen share
     not explicitly tested; maintainer considers Fluxer finished (2026-11-20).
-  - Skipped for now (optional, can be added any time, admin panel takes
-    priority over env): Klipy API key (`FLUXER_KLIPY_API_KEY`, GIF search
-    stays off until set) and YouTube Data API key (`FLUXER_YOUTUBE_API_KEY`,
-    v3 enabled, restriction None/IP). Offer: add both as masked optional
-    fields to the repo template.
+  - Klipy + YouTube keys: added by the maintainer on 2026-11-20 (in their own
+    template, outside the repo); instance reports `gif_enabled`/`youtube_enabled`
+    true; GIF picker + previews work after a client reload. Adding both as
+    masked optional fields to the bare repo template: offered, not done.
+  - Embedded worker verified (`all_lanes`, cron on); `pg_read_all_settings`
+    grant noted as optional in the README.
 - Maintainer decisions 2026-11-20 (after reviewing how the catalogue holds up):
   - Repo focus stays game servers; apps (Fluxer, bot) are a secondary area:
     light doc touch only.

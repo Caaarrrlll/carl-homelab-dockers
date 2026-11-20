@@ -54,7 +54,9 @@ library or the router config is invalid.
   ```
 
   If the server is shared with other apps, check `max_connections`: with the
-  defaults below fluxer-aio uses up to ~20 connections.
+  defaults below fluxer-aio uses up to ~20 connections. Optional:
+  `GRANT pg_read_all_settings TO fluxer;` silences a harmless api warning
+  (`permission denied to examine "shared_preload_libraries"`).
 - **Redis/Valkey** reachable from the container. Use a database index no
   other app uses (e.g. `/1`).
 - **Reverse proxy** that terminates TLS for your domain and forwards

@@ -45,11 +45,15 @@
 - Running on Unraid since 2026-11-18: text chat confirmed by the maintainer,
   bot voice through LiveKit confirmed (botsu roadmap, 2026-11-19).
   Person-to-person calls from outside the LAN not explicitly tested.
-- The embedded worker gets the api's environment; upstream's worker-only
-  settings (`FLUXER_API_WORKER_MODE=all_lanes`,
-  `FLUXER_API_WORKER_ENABLE_CRON_SCHEDULER=true`) are not set. Check on the
-  first start that background jobs and cron run; if not, add them to
-  `overlay/api.env`.
+- ~~Embedded worker may lack upstream's worker-only settings.~~ Resolved
+  2026-11-20 (verified on Unraid): the embedded worker logs
+  `workerMode: all_lanes`, `cronSchedulerEnabled: true` and runs jobs.
+- The api logs `permission denied to examine "shared_preload_libraries"`
+  when the Fluxer role can't read server settings (shared Postgres).
+  Harmless; README suggests `GRANT pg_read_all_settings TO fluxer;`.
+- Optional integrations (Klipy GIFs, YouTube previews) verified working
+  2026-11-20. After adding a key, clients must reload: the app reads
+  `services.gif_enabled` / `youtube_enabled` only when it starts.
 - `FLUXER_SERVER_ADMIN__FLUXER_STORAGE_*` in `overlay/rust.env` assumes the
   combined Rust process reads per-service `FLUXER_SERVER_<SVC>__` overrides
   the same way as for ports (upstream only sets the filesystem store on its
@@ -62,7 +66,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
-| 2026-11-20 | _(this change)_ | Release watch: `upstream/bump-release.py` + `.github/workflows/fluxer-release-watch.yml` | Weekly/manual; bumps to the newest compose bundle (found via docs.fluxer.com/compose/latest), test-builds, opens a PR. Tested on a scratch copy against bundle 2026.1118.162713 (5 image digests, env unchanged) and the up-to-date path. |
+| 2026-11-20 | `782aa6b` | Release watch: `upstream/bump-release.py` + `.github/workflows/fluxer-release-watch.yml` | Weekly/manual; bumps to the newest compose bundle (found via docs.fluxer.com/compose/latest), test-builds, opens a PR. Tested on a scratch copy against bundle 2026.1118.162713 (5 image digests, env unchanged) and the up-to-date path. |
 | 2026-11-20 | `ee404f9` | Health check: s6 `/command` on PATH; report every failing probe | Docker showed `unhealthy` while all services worked: `docker exec`/HEALTHCHECK lack s6's `/command`, so `with-contenv` failed (`unable to exec ifelse`) in the media-proxy/fluxer-server probes. Confirmed on Unraid: the old script with that PATH passed in reports `healthy`. |
 | 2026-11-18 | `63a3295` | Self-test: check only linux-x64 glibc node prebuilds | First CI build (run 44372472991) failed only on argon2's musl prebuild, which Node never loads on glibc. All binaries, versions, Caddyfile and env checks passed. |
 | 2026-11-18 | `b144c4a` | New image | Fluxer 2026.1118.90548; see `RATE_LIMIT_TRACKER.md` (fluxer-aio) for the research and simulation record. |
