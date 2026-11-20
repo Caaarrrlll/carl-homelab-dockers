@@ -60,7 +60,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
-| 2026-11-20 | _(this change)_ | Health check: s6 `/command` on PATH; report every failing probe | Docker showed `unhealthy` while all services worked: `docker exec`/HEALTHCHECK lack s6's `/command`, so `with-contenv` failed (`unable to exec ifelse`) in the media-proxy/fluxer-server probes. Confirmed on Unraid: the old script with that PATH passed in reports `healthy`. |
+| 2026-11-20 | `ee404f9` | Health check: s6 `/command` on PATH; report every failing probe | Docker showed `unhealthy` while all services worked: `docker exec`/HEALTHCHECK lack s6's `/command`, so `with-contenv` failed (`unable to exec ifelse`) in the media-proxy/fluxer-server probes. Confirmed on Unraid: the old script with that PATH passed in reports `healthy`. |
 | 2026-11-18 | `63a3295` | Self-test: check only linux-x64 glibc node prebuilds | First CI build (run 44372472991) failed only on argon2's musl prebuild, which Node never loads on glibc. All binaries, versions, Caddyfile and env checks passed. |
 | 2026-11-18 | `b144c4a` | New image | Fluxer 2026.1118.90548; see `RATE_LIMIT_TRACKER.md` (fluxer-aio) for the research and simulation record. |
 
@@ -70,6 +70,6 @@
   `gen-env.py` re-run and diff reviewed, this snapshot updated.
 - [x] CI build green (self-test passed) — 2026-11-18, run 44372903547.
 - [x] First start on Unraid: services up, setup token works (2026-11-18);
-  Docker `healthy` pending the health-check fix (2026-11-20).
+  Docker `healthy` after `ee404f9` (2026-11-20, confirmed on Unraid).
 - [ ] Text chat, voice; screen share (optional).
 - [ ] `/data/secrets.env` and `objects/` included in backups.

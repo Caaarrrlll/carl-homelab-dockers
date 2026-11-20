@@ -13,13 +13,9 @@ done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintai
 
 ## Active task — build `caaarrrlll/fluxer-aio` (2026-11-18)
 
-**PAUSED 2026-11-18 by the maintainer** (fluxer-aio deployed, text chat works).
-Resume at step 8: (a) get the `fluxer-aio-healthcheck` output from the
-maintainer and fix the probe that makes Docker report `unhealthy`; (b) voice
-test from two devices, one on mobile data. The read-only SSH key and SSH on
-the server stay enabled until step 10.
-Uncommitted: this tracker update and the fluxer-aio README ("bring your own
-Postgres/Redis/reverse proxy" callout + setup-token note), docs only.
+**Status 2026-11-20:** steps 1-5 and 7-9 done; fluxer-aio runs healthy.
+Open: step 6 (release-watch rebuilds; to be folded into ROADMAP item 16, the
+CI redesign) and step 10 (revoke the SSH key: NOT yet, maintainer's call).
 
 Fluxer in one Unraid container, using the maintainer's existing Postgres 18, Redis and
 Caddy (reached via the host IP). Research and decisions:
@@ -174,7 +170,7 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
 - [✓] 7. Maintainer prep on Unraid (2026-11-18): PG role + DB `fluxer`, reverse
   proxy site, DNS, router forwards TCP 7881 + UDP 7882; personal pre-filled
   template + proxy config staged on the maintainer's share (outside the repo).
-- [•] 8. First start + live test (verified on Unraid via read-only access +
+- [✓] 8. First start + live test (verified on Unraid via read-only access +
   maintainer report)
   - First start: all 8 services up; init OK; `/data` owned 99:100,
     `secrets.env` 0600 root. One problem: PG role password didn't match the
@@ -187,8 +183,7 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
     channel they created: **text works** (2026-11-18). Note: the setup page
     tells rexctl users how to show the token; fluxer-aio users read it from
     `/data/secrets.env` (now in the README, uncommitted).
-  - [•] Docker health `unhealthy` although every service works -- touching:
-    images/apps/fluxer-aio/rootfs/usr/local/bin/fluxer-aio-healthcheck, audit.md.
+  - [✓] Docker health `unhealthy` although every service works (fixed 2026-11-20)
     - Maintainer output 2026-11-20: `unhealthy: media-proxy` (0.45 s). media-proxy
       itself serves avatars with 200 (log). Probe run by hand:
       `execlineb: fatal: unable to exec ifelse` -> `/command/with-contenv`
@@ -197,9 +192,16 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
     - Fix: health check sets PATH incl. /command and reports all failures
       with reasons (simulated: all-ok / one / two failures). Confirmed on
       Unraid before building: old script + that PATH -> `healthy`, exit 0.
-    - [ ] Commit (push triggers the fluxer-aio build), CI green, maintainer
-      Force Update, confirm `healthy` via read-only access.
-  - [ ] Voice call (required); screen share (optional).
+    - Committed `ee404f9`; push run 44710843941 GREEN 2026-11-20 (only the
+      fluxer-aio steps ran; the old image is now `fluxer-aio:previous`).
+    - Maintainer force-updated (a plain "Check for updates" kept the old
+      container; Unraid's Advanced View "force update" or `docker pull` first).
+      Verified on Unraid via read-only access 2026-11-20: started 09:45:26 UTC,
+      `healthy`, streak 0, router 200; only a start-up `connection refused`
+      4 s after start.
+  - [✓] Voice: bot voice through fluxer-aio's LiveKit works (botsu roadmap,
+    2026-11-19). Person-to-person call from outside the LAN and screen share
+    not explicitly tested; maintainer considers Fluxer finished (2026-11-20).
   - Skipped for now (optional, can be added any time, admin panel takes
     priority over env): Klipy API key (`FLUXER_KLIPY_API_KEY`, GIF search
     stays off until set) and YouTube Data API key (`FLUXER_YOUTUBE_API_KEY`,
