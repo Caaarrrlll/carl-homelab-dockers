@@ -1,22 +1,44 @@
 #!/bin/bash
 # fluxer-aio-healthcheck: Docker HEALTHCHECK. Healthy only when the router
 # and every Fluxer service answer their own health check (the same checks the
-# bundle's compose file uses per container). Prints the first failure.
+# bundle's compose file uses per container). Prints every failing probe with
+# a short reason, then "healthy" or "unhealthy: <list>".
 
-fail() { echo "unhealthy: $1"; exit 1; }
+# Docker runs this (and `docker exec`) outside s6, so s6's tools in /command
+# (needed by with-contenv, an execline script) are not on the default PATH.
+export PATH=/command:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-get() { # get <url>: 200 or fail
-	curl -fsS -o /dev/null -m 5 "$1" 2>/dev/null
+failed=()
+
+probe() { # probe <name> <command...>: record a failure with its last output line
+	local name="$1" out
+	shift
+	if ! out="$("$@" 2>&1)"; then
+		out="$(printf '%s' "$out" | tail -n 1 | cut -c1-200)"
+		echo "FAIL $name: ${out:-no output}"
+		failed+=("$name")
+	fi
 }
 
-get http://127.0.0.1:8080/_health || fail "router (:8080)"
-get http://127.0.0.1:18080/_health || fail "api (:18080)"
-get http://127.0.0.1:18081/_health/ready || fail "gateway (:18081)"
-get http://127.0.0.1:8222/healthz || fail "nats (:8222)"
-get http://127.0.0.1:7700/health || fail "meilisearch (:7700)"
-get http://127.0.0.1:7880/ || fail "livekit (:7880)"
-/command/with-contenv /usr/local/bin/fluxer-aio-env media-proxy \
-	/usr/local/bin/fluxer-media-proxy healthcheck >/dev/null 2>&1 || fail "media-proxy"
-/command/with-contenv /usr/local/bin/fluxer-aio-env rust \
-	/usr/local/bin/fluxer-server healthcheck >/dev/null 2>&1 || fail "fluxer-server"
+http() { # http <url>: succeed on HTTP 2xx within 5 s
+	curl -fsS -o /dev/null -m 5 "$1"
+}
+
+probe router http http://127.0.0.1:8080/_health
+probe api http http://127.0.0.1:18080/_health
+probe gateway http http://127.0.0.1:18081/_health/ready
+probe nats http http://127.0.0.1:8222/healthz
+probe meilisearch http http://127.0.0.1:7700/health
+probe livekit http http://127.0.0.1:7880/
+# The Rust services' own health commands need their service environment
+# (ports etc.), built by fluxer-aio-env from the container environment.
+probe media-proxy with-contenv /usr/local/bin/fluxer-aio-env media-proxy \
+	/usr/local/bin/fluxer-media-proxy healthcheck
+probe fluxer-server with-contenv /usr/local/bin/fluxer-aio-env rust \
+	/usr/local/bin/fluxer-server healthcheck
+
+if [ "${#failed[@]}" -gt 0 ]; then
+	echo "unhealthy: ${failed[*]}"
+	exit 1
+fi
 echo healthy

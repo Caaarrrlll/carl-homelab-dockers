@@ -187,9 +187,18 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
     channel they created: **text works** (2026-11-18). Note: the setup page
     tells rexctl users how to show the token; fluxer-aio users read it from
     `/data/secrets.env` (now in the README, uncommitted).
-  - [ ] Docker health shows `unhealthy` although every service works: one
-    probe in `fluxer-aio-healthcheck` is wrong. Waiting for the maintainer's
-    `docker exec fluxer-aio /usr/local/bin/fluxer-aio-healthcheck` output.
+  - [•] Docker health `unhealthy` although every service works -- touching:
+    images/apps/fluxer-aio/rootfs/usr/local/bin/fluxer-aio-healthcheck, audit.md.
+    - Maintainer output 2026-11-20: `unhealthy: media-proxy` (0.45 s). media-proxy
+      itself serves avatars with 200 (log). Probe run by hand:
+      `execlineb: fatal: unable to exec ifelse` -> `/command/with-contenv`
+      needs s6's `/command` on PATH, which `docker exec` and Docker's
+      HEALTHCHECK don't have. Same flaw in the fluxer-server probe.
+    - Fix: health check sets PATH incl. /command and reports all failures
+      with reasons (simulated: all-ok / one / two failures). Confirmed on
+      Unraid before building: old script + that PATH -> `healthy`, exit 0.
+    - [ ] Commit (push triggers the fluxer-aio build), CI green, maintainer
+      Force Update, confirm `healthy` via read-only access.
   - [ ] Voice call (required); screen share (optional).
   - Skipped for now (optional, can be added any time, admin panel takes
     priority over env): Klipy API key (`FLUXER_KLIPY_API_KEY`, GIF search

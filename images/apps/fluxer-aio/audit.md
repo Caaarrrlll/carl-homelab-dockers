@@ -9,7 +9,7 @@
 | Base image | `caaarrrlll/debian-slim-baseimage:trixie-latest` |
 | Build context | `images/apps/fluxer-aio/` |
 | Upstream | Fluxer `fluxer-release@2026.1118.90548` compose bundle (`upstream/RELEASE`) |
-| Last audited | 2026-11-18 |
+| Last audited | 2026-11-20 |
 
 ## Current snapshot
 
@@ -40,9 +40,9 @@
 
 ## Known issues / unverified
 
-- Built in CI 2026-11-18 (run 44372903547, self-test passed) but not yet run
-  on Unraid: the start-up script, env loader and services are simulated
-  only (Windows Git Bash, stubs).
+- Running on Unraid since 2026-11-18: text chat confirmed by the maintainer,
+  bot voice through LiveKit confirmed (botsu roadmap, 2026-11-19).
+  Person-to-person calls from outside the LAN not explicitly tested.
 - The embedded worker gets the api's environment; upstream's worker-only
   settings (`FLUXER_API_WORKER_MODE=all_lanes`,
   `FLUXER_API_WORKER_ENABLE_CRON_SCHEDULER=true`) are not set. Check on the
@@ -60,6 +60,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
+| 2026-11-20 | _(this change)_ | Health check: s6 `/command` on PATH; report every failing probe | Docker showed `unhealthy` while all services worked: `docker exec`/HEALTHCHECK lack s6's `/command`, so `with-contenv` failed (`unable to exec ifelse`) in the media-proxy/fluxer-server probes. Confirmed on Unraid: the old script with that PATH passed in reports `healthy`. |
 | 2026-11-18 | `63a3295` | Self-test: check only linux-x64 glibc node prebuilds | First CI build (run 44372472991) failed only on argon2's musl prebuild, which Node never loads on glibc. All binaries, versions, Caddyfile and env checks passed. |
 | 2026-11-18 | `b144c4a` | New image | Fluxer 2026.1118.90548; see `RATE_LIMIT_TRACKER.md` (fluxer-aio) for the research and simulation record. |
 
@@ -68,6 +69,7 @@
 - [ ] On a release bump: `upstream/RELEASE`, Dockerfile `*_IMAGE` digests,
   `gen-env.py` re-run and diff reviewed, this snapshot updated.
 - [x] CI build green (self-test passed) — 2026-11-18, run 44372903547.
-- [ ] First start on Unraid: all services healthy, setup token works.
+- [x] First start on Unraid: services up, setup token works (2026-11-18);
+  Docker `healthy` pending the health-check fix (2026-11-20).
 - [ ] Text chat, voice; screen share (optional).
 - [ ] `/data/secrets.env` and `objects/` included in backups.
