@@ -28,3 +28,7 @@ templates/live/
 # Build / runtime data
 *.log
 serverdata/
+
+# Python bytecode (e.g. from running upstream/*.py locally)
+__pycache__/
+*.pyc
