@@ -1,9 +1,16 @@
 # carl-homelab-dockers
 
-Monorepo for my homelab's Docker images and **Unraid** templates. It currently
-holds the image chain used to run an **ARK: Survival Ascended** dedicated
-server cluster under Wine. Services that only need an Unraid wrapper around an
-upstream image get a template in `templates/` rather than an image here.
+Monorepo for my homelab's Docker images and **Unraid** templates. Its main
+focus is **game servers**: the image chain that runs an **ARK: Survival
+Ascended** dedicated server cluster under Wine. A smaller second area holds
+self-hosted **apps**, currently `fluxer-aio` (an all-in-one Fluxer chat
+server, a Discord alternative). Services that only need an Unraid wrapper
+around an upstream image get a template in `templates/` rather than an image
+here.
+
+Related project: the chat bot for Discord and Fluxer lives in its own repo,
+[Caaarrrlll/botsu](https://github.com/Caaarrrlll/botsu) (own CI, image and
+Unraid template).
 
 (Formerly `carl-gaming-dockers`, renamed 2026-11-18; the old GitHub URL
 redirects.)

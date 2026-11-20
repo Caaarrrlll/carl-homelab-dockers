@@ -7,6 +7,24 @@ long-running upgrade finishes, its tracking document is moved under
 `docs/history/2026-11-07-ntsync-wine11.md`) so entries sort chronologically,
 and referenced from this file.
 
+## 2026-11-20 — Repo scope after fluxer-aio, CI direction
+
+- **Scope confirmed.** Game servers stay the repo's main focus; self-hosted
+  apps (`images/apps/`, currently fluxer-aio) are a secondary area. The chat
+  bot is a separate project with its own code, CI and image,
+  [Caaarrrlll/botsu](https://github.com/Caaarrrlll/botsu); this repo only
+  links to it. fluxer-aio is considered finished and running (text chat
+  confirmed by the maintainer, bot voice through its LiveKit confirmed in
+  botsu's roadmap); further work there is infrastructure-side.
+- **CI direction (ROADMAP item 16).** Motivation: adding fluxer-aio needed
+  copied steps, longer conditions and a special `fluxer_only` input. Planned:
+  one list of images drives the workflow; dependents rebuild transitively
+  (Debian -> wine, asa, fluxer-aio; Wine -> asa); a monthly Debian rebuild
+  instead of none (weekly was rejected); manual runs name images. The local
+  `docker-updater` scripts will be removed: GitHub Actions is the only build
+  path, and a move off GitHub would mean porting CI, not reviving them.
+- **Process rule:** doc-only commits always carry `[skip ci]`.
+
 ## 2026-11-18 — GameAnalytics log flood, agent tracking setup, repo rename, fluxer-aio
 
 - **New image `fluxer-aio`** (`images/apps/fluxer-aio`, template

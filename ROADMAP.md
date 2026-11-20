@@ -92,6 +92,39 @@ Proposed design: restart **inside** the container, never update:
 Directly relevant to housekeeping item 6: while this is parked, an idle crash
 needs a manual restart.
 
+### 16. CI driven by one list of images (dependency-aware rebuilds)
+**Status: 📋 PLANNED (added 2026-11-20).** Next task after fluxer-aio; plan it
+in `RATE_LIMIT_TRACKER.md` first.
+**Risk: 🟡 Medium.** Only the build side changes (running containers keep
+their image until they are updated), but a planner bug could skip or add
+builds. Mitigation: the planner prints its decision in every run summary and
+is tested locally (stub git diffs) before it replaces the current steps.
+
+Adding fluxer-aio showed the hand-written workflow doesn't scale: every image
+needs copied steps, long `if:` conditions and, to build one image alone, a
+special input (`fluxer_only`). Maintainer's requirements (2026-11-20):
+
+- **Dependents always follow their base, transitively**: a Debian change
+  rebuilds wine, asa and fluxer-aio; a Wine change rebuilds only asa; a
+  fluxer-aio change rebuilds only fluxer-aio.
+- **Monthly** scheduled rebuild of the Debian base (and so everything on it),
+  for upstream security fixes; no weekly schedule. Fedora stays opt-in.
+- **Manual runs** name the images to build (dependents included), replacing
+  `fluxer_only` / `build_fedora`.
+
+Design: one list (e.g. `.github/images.yml`: name, context, image, tag
+prefix, parent, opt-in) read by a small stdlib-Python planner job; build jobs
+by dependency level (bases, then children, then grandchildren), images on the
+same level in parallel, all through the same keep-`:previous` / build / push
+steps. The retag workflow's image list should come from the same file.
+
+Same change: **remove `scripts/docker-updater.sh` / `.bat`**, the VS Code
+build task in `dockers.code-workspace`, and the `DOCKERHUB_USER` build-script
+docs/guardrails in `AGENTS.md`, `CLAUDE.md` and the root `README.md`: CI on
+GitHub is the build path. If the repo ever moves away from GitHub, expand the
+CI on the new platform rather than reviving local scripts (a note, not a
+planned item).
+
 ## Low priority
 
 ### 9. Possibly unused packages in the ASA image
@@ -140,9 +173,11 @@ can run without the Steam client, so it may be worth another look.
 
 0. **Test first:** done 2026-11-18 (housekeeping items 5 + 7 closed). Item 15
    (GameAnalytics log flood) done 2026-11-18, see `ROADMAP_HISTORY.md`.
-1. 🔭 **P1 (was P2):** item 14 (Wine vs Proton / Proton-GE research).
-2. ⛔ Item 9 (`screen`/`xvfb`) stays blocked until item 14's research is
+1. 📋 **Next:** item 16 (list-driven CI, monthly Debian rebuild, remove the
+   local build scripts), after the fluxer-aio task closes.
+2. 🔭 **P1 (was P2):** item 14 (Wine vs Proton / Proton-GE research).
+3. ⛔ Item 9 (`screen`/`xvfb`) stays blocked until item 14's research is
    done.
-3. ⏸️ Item 1 stays parked until a dedicated planning session.
+4. ⏸️ Item 1 stays parked until a dedicated planning session.
 
 Rollback for any of these: ASA README → "Rolling back to an earlier image".

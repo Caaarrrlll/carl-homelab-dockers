@@ -216,10 +216,16 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
     this repo only links to it.
   - Proposed next task: list-driven CI (images list + planner + build levels),
     removing the updater scripts in the same task. Awaiting go-ahead.
-- [ ] 9. Docs: root README catalogue + layout, AGENTS layout/CI, HISTORY
-  entry; ROADMAP items: list-driven CI (maintainer's own Redis hardening
-  is noted in Claude's memory, not in the repo)
+- [✓] 9. Doc pass (2026-11-20, light touch per maintainer): README/AGENTS intro
+  (game servers main focus, apps secondary, botsu linked as separate repo);
+  CLAUDE/AGENTS: workflow edits also rebuild fluxer-aio, doc-only commits
+  always `[skip ci]`; ROADMAP item 16 (list-driven CI, monthly Debian
+  rebuild, remove docker-updater scripts) + suggested order; HISTORY
+  2026-11-20 entry; fluxer-aio folder in `dockers.code-workspace`.
+  Infrastructure docs parked (maintainer). Checks: `git diff --check`,
+  workspace JSON parses, redaction grep clean.
 - [ ] 10. Revoke the SSH key (maintainer), revert CLAUDE.md access note, close
+  (NOT yet: maintainer wants the key kept for now, 2026-11-20)
 
 Previous (2026-11-18): Fluxer / Stoat research
 (see `RATE_LIMIT_TRACKER_HISTORY.md`).

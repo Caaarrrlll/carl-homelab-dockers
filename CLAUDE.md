@@ -62,8 +62,9 @@ working with Claude Code in this repo.
   `start-server.sh`, ASA README, `templates/asa-wine.xml`, ASA `audit.md`).
 - `templates/live/` is git-ignored and may hold secrets: read it for
   comparison if present, never commit it or quote secrets from it.
-- A workflow-file edit rebuilds debian → wine → asa; add `[skip ci]` to the
-  commit message when it shouldn't.
+- A workflow-file edit rebuilds debian → wine → asa and fluxer-aio; add
+  `[skip ci]` to the commit message when it shouldn't. Doc-only commits always
+  carry `[skip ci]` (maintainer rule, 2026-11-20).
 
 ## Git
 

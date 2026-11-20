@@ -21,6 +21,10 @@
 			"path": "images/games/asa-docker"
 		},
 		{
+			"name": "Fluxer AIO (app)",
+			"path": "images/apps/fluxer-aio"
+		},
+		{
 			"name": "Unraid Templates",
 			"path": "templates"
 		},

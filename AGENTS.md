@@ -5,13 +5,20 @@ Overview of this repository for automated/agent contributors.
 ## What this is
 
 `carl-homelab-dockers` is a monorepo for the maintainer's own Docker images
-and Unraid templates for their homelab on an **Unraid** host. Today it holds
-the images used to run an **ARK: Survival Ascended** dedicated server cluster
-under Wine (Debian → Wine → ASA), so most rules below are about that chain;
-treat ASA-specific rules (shared install, ASA env vars, the five-place
-alignment) as scoped to `images/games/asa-docker` and `templates/asa-wine.xml`.
+and Unraid templates for their homelab on an **Unraid** host. Its **main
+focus is game servers**: the images that run an **ARK: Survival Ascended**
+dedicated server cluster under Wine (Debian → Wine → ASA), so most rules below
+are about that chain; treat ASA-specific rules (shared install, ASA env vars,
+the five-place alignment) as scoped to `images/games/asa-docker` and
+`templates/asa-wine.xml`. A **secondary area** holds self-hosted apps under
+`images/apps/`, currently `fluxer-aio` (all-in-one Fluxer chat; its own rules
+are in its README/`audit.md`: it expects a standalone Postgres, Redis and TLS
+reverse proxy, and release bumps go through `upstream/gen-env.py`).
 Services that only need an Unraid wrapper around an upstream image get a
-template in `templates/`, not an image under `images/`.
+template in `templates/`, not an image under `images/`. Projects with their
+own code and release cycle get their own repo; the chat bot is
+[Caaarrrlll/botsu](https://github.com/Caaarrrlll/botsu) (it connects to
+fluxer-aio, but nothing of it is built here).
 
 It was created by importing the original per-image repositories with
 `git subtree`, so their history lives under `images/`. The repo was named
@@ -161,8 +168,9 @@ keep Docker installed locally, so the `docker-updater` scripts are optional.
 Changes under `templates/`, `docs/`, root files and **any `*.md` file**
 (including image READMEs and `audit.md`) do not trigger builds; the path
 filter excludes `**/*.md`. A change to the workflow file itself rebuilds
-debian → wine → asa, so put `[skip ci]` in the commit message when a workflow
-edit shouldn't rebuild anything. It expects repository secrets
+debian → wine → asa and fluxer-aio, so put `[skip ci]` in the commit message
+when a workflow edit shouldn't rebuild anything (doc-only commits always carry
+`[skip ci]`). It expects repository secrets
 `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`.
 
 ## Conventions
