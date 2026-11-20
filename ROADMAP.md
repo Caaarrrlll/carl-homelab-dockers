@@ -125,6 +125,55 @@ GitHub is the build path. If the repo ever moves away from GitHub, expand the
 CI on the new platform rather than reviving local scripts (a note, not a
 planned item).
 
+### 17. fluxer-aio: back up, upgrade, verify, then clean up (automatic on update)
+**Status: 📋 PLANNED (added 2026-11-20).** Plan it in `RATE_LIMIT_TRACKER.md`
+before writing code. Ideally ship it **before** merging the first release-watch
+PR (#1), so that update is its first real test.
+**Risk: 🟡 Medium.** Runs before Fluxer starts; a bug could block start-up
+(fail-closed by design) or, worse, prune a backup that is still needed. The
+order below exists to prevent the latter.
+
+Fluxer migrates its database when a new release starts, and updates now
+arrive regularly (item 16 / the release watch). The container should protect
+itself on every **update** (not on a plain restart):
+
+1. **Detect an update.** The image records the Fluxer release it contains
+   (from `upstream/RELEASE`); `/data` records the release that last started
+   successfully. Different = update. First start: record only, no backup.
+2. **Back up**, in `fluxer-aio-init`, before any Fluxer service (and so any
+   migration) starts:
+   - `pg_dump -Fc` of the Fluxer database only (other databases on a shared
+     Postgres are untouched), plus `secrets.env`, into a dated folder named
+     `<old>-to-<new>`.
+   - Check the dump is readable (`pg_restore --list`) before continuing.
+   - On failure: **stop the container before Fluxer starts** (default), with
+     a clear message; an option allows "warn and continue".
+3. **Upgrade:** start the new release normally (migrations run in the api).
+4. **Verify:** wait until the container's own health check
+   (`fluxer-aio-healthcheck`) passes, i.e. every service is up on the new
+   release, then record the new release as "last started successfully".
+   If it doesn't become healthy within a time limit, log loudly, keep the
+   backup, and do **not** record the new release (so the next start still
+   treats it as an unverified update).
+5. **Clean up only after verification:** prune old backups beyond the
+   retention count. The backup of the update just verified is always kept;
+   nothing is pruned while an update is unverified.
+
+Also: `fluxer-aio-backup` for an on-demand backup (`docker exec`), README
+restore steps (`pg_restore` into the Fluxer database + the matching
+`secrets.env`, image rollback with the Retag workflow / `:previous`), and
+`audit.md` notes.
+
+Technical constraint: `pg_dump` must be the server's major version or newer.
+Debian trixie ships client 17; a Postgres 18 server needs the client from the
+official PostgreSQL apt repository (pinned major, SHA/keyring verified). If
+the server is newer than the client, the backup fails (and so, by default,
+the start), never silently skips.
+
+Open decisions (maintainer): backups inside `/data/backups` or a separate
+template path; fail-closed default confirmed?; how many backups to keep
+(proposal: 3); time limit for verification (proposal: 10 min).
+
 ## Low priority
 
 ### 9. Possibly unused packages in the ASA image
@@ -175,9 +224,11 @@ can run without the Steam client, so it may be worth another look.
    (GameAnalytics log flood) done 2026-11-18, see `ROADMAP_HISTORY.md`.
 1. 📋 **Next:** item 16 (list-driven CI, monthly Debian rebuild, remove the
    local build scripts), after the fluxer-aio task closes.
-2. 🔭 **P1 (was P2):** item 14 (Wine vs Proton / Proton-GE research).
-3. ⛔ Item 9 (`screen`/`xvfb`) stays blocked until item 14's research is
+2. 📋 **Before merging fluxer-aio's first release PR:** item 17 (backup ->
+   upgrade -> verify -> clean up).
+3. 🔭 **P1 (was P2):** item 14 (Wine vs Proton / Proton-GE research).
+4. ⛔ Item 9 (`screen`/`xvfb`) stays blocked until item 14's research is
    done.
-4. ⏸️ Item 1 stays parked until a dedicated planning session.
+5. ⏸️ Item 1 stays parked until a dedicated planning session.
 
 Rollback for any of these: ASA README → "Rolling back to an earlier image".
