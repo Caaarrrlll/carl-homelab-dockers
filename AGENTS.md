@@ -73,8 +73,6 @@ Supporting files:
   `images/apps/fluxer-aio/upstream/bump-release.py`, test-builds fluxer-aio
   (no push) and opens/updates a pull request from `auto/fluxer-release`.
   Merging it is what rebuilds and publishes the image.
-- `scripts/docker-updater.bat` — builds and pushes all images (Windows).
-- `scripts/docker-updater.sh` — builds and pushes all images (Linux/macOS).
 - `scripts/unraid-readonly.sh` — SSH forced command for a temporary,
   revocable read-only key on Unraid (allowlisted `docker ps`/`logs`/`inspect`
   without env/`stats`, `ls` under one appdata folder). Runs from the flash
@@ -126,37 +124,13 @@ rebuild and push the base before its dependents. The Fedora image is standalone.
 
 ## Building / releasing
 
-Use `scripts/docker-updater.sh` (Linux/macOS) or
-`scripts/docker-updater.bat` (Windows); the latter is also exposed as the VS Code
-task **Docker: Build & Push All**. They build and push each image in dependency
-order (debian → wine → asa-docker), aborting on the first failure. Fedora is
-skipped unless `BUILD_FEDORA=1` is set, matching CI.
-
-Both scripts require the `DOCKERHUB_USER` environment variable and exit with an
-error if it is not set:
-
-```bash
-DOCKERHUB_USER=myuser ./scripts/docker-updater.sh
-```
-
-```powershell
-$env:DOCKERHUB_USER = "myuser"
-.\scripts\docker-updater.bat
-```
-
-`DOCKERHUB_USER` replaces the namespace in the tags that are built and pushed;
-it deliberately does **not** default to `caaarrrlll`, so contributors cannot
-accidentally push to the maintainer's Docker Hub account. The Dockerfiles'
-`FROM` lines intentionally keep referencing the maintainer's published images,
-so the dependency chain builds on those public bases regardless of which
-namespace is being pushed to.
-
-To rebuild a single image manually:
-
-```powershell
-docker image build -t caaarrrlll/wine-baseimage:latest .\images\systems\wine-base
-docker image push caaarrrlll/wine-baseimage:latest
-```
+Images are built **only by CI** (GitHub Actions); there are no local build
+scripts (the `docker-updater` scripts were removed on 2026-11-21) and the
+maintainer does not keep Docker installed locally. If the repo ever moves
+away from GitHub, port the CI to the new platform rather than reviving local
+scripts. The Dockerfiles' `FROM` lines intentionally reference the
+maintainer's published images (`caaarrrlll/...`), so the dependency chain
+always builds on those public bases.
 
 CI (`Build and push images`) runs on pushes to `main`, `v*` tags, and manual
 dispatch. On a normal push it only rebuilds affected images and their
@@ -174,8 +148,7 @@ rebuild is a full one). Each image is pushed as `latest` (Debian:
 To roll back without local Docker, run the **Retag image** workflow
 (source `previous` or a date/`sha-` tag → target `latest`) and force-update
 the containers in Unraid, or pin the template's Repository to one of those
-tags. GitHub Actions is the primary build path; the maintainer does not
-keep Docker installed locally, so the `docker-updater` scripts are optional.
+tags.
 Changes under `templates/`, `docs/`, root files and **any `*.md` file**
 (including image READMEs and `audit.md`) do not trigger builds; the path
 filter excludes `**/*.md`. A change to the workflow file itself rebuilds
@@ -289,13 +262,10 @@ not tested on Unraid").
 
 ## Notes / gotchas
 
-- If a user reports `DOCKERHUB_USER is not set` (or a build/push fails
-  immediately), the build scripts are refusing to run without a Docker Hub
-  username. This is intentional: do not "fix" it by defaulting back to
-  `caaarrrlll`. Ask them to export `DOCKERHUB_USER` first (see above).
 - The Dockerfiles' `FROM` lines intentionally reference `caaarrrlll/...`
-  images. Only the tags built/pushed by the scripts use `DOCKERHUB_USER`, so a
-  fork builds on the maintainer's public base images rather than its own.
+  images; CI pushes to the Docker Hub account in the `DOCKERHUB_USERNAME`
+  secret. A fork builds on the maintainer's public base images unless it
+  changes the `FROM` lines.
 - Fedora CI is intentionally opt-in: the `build_fedora` input defaults to
   `false`, and Fedora is excluded from tag/manual chains because the image is
   not currently used and still consumes Actions job time. Re-enable it when
@@ -317,6 +287,3 @@ not tested on Unraid").
 - `images/games/asa-docker` ships default game passwords and logs secrets when
   `DEBUG=1`. This is **accepted**: the Unraid template overrides the passwords
   and `DEBUG` defaults to `0`. See its `audit.md` before changing this behavior.
-- Builds should run against the local Docker context (`docker context use
-  desktop-linux`); do not set `DOCKER_HOST` to the Unraid SSH host for local
-  builds.

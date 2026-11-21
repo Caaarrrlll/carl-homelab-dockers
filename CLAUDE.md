@@ -63,8 +63,8 @@ working with Claude Code in this repo.
 - Shared install: never add anything that runs SteamCMD automatically while
   other cluster servers might be running (see `AGENTS.md` gotchas and
   `ROADMAP.md`).
-- Build scripts must keep requiring `DOCKERHUB_USER`; don't default it to
-  `caaarrrlll`. Keep `FROM` lines pointing at `caaarrrlll/...`.
+- Keep `FROM` lines pointing at `caaarrrlll/...`. Images are built only by
+  CI; don't add local build scripts back (port CI if the repo leaves GitHub).
 - ASA env var / port / volume changes touch all five places (Dockerfile,
   `start-server.sh`, ASA README, `templates/asa-wine.xml`, ASA `audit.md`).
 - `templates/live/` is git-ignored and may hold secrets: read it for

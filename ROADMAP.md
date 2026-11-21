@@ -118,12 +118,9 @@ by dependency level (bases, then children, then grandchildren), images on the
 same level in parallel, all through the same keep-`:previous` / build / push
 steps. The retag workflow's image list should come from the same file.
 
-Same change: **remove `scripts/docker-updater.sh` / `.bat`**, the VS Code
-build task in `dockers.code-workspace`, and the `DOCKERHUB_USER` build-script
-docs/guardrails in `AGENTS.md`, `CLAUDE.md` and the root `README.md`: CI on
-GitHub is the build path. If the repo ever moves away from GitHub, expand the
-CI on the new platform rather than reviving local scripts (a note, not a
-planned item).
+Done separately (2026-11-21): the local `docker-updater` scripts, the VS Code
+build task and the `DOCKERHUB_USER` docs/guardrails were removed; CI on GitHub
+is the only build path.
 
 ### 17. fluxer-aio: back up, upgrade, verify, then clean up (automatic on update)
 **Status: 📋 PLANNED (added 2026-11-20).** Plan it in `RATE_LIMIT_TRACKER.md`
@@ -222,8 +219,8 @@ can run without the Steam client, so it may be worth another look.
 
 0. **Test first:** done 2026-11-18 (housekeeping items 5 + 7 closed). Item 15
    (GameAnalytics log flood) done 2026-11-18, see `ROADMAP_HISTORY.md`.
-1. 📋 **Next:** item 16 (list-driven CI, monthly Debian rebuild, remove the
-   local build scripts), after the fluxer-aio task closes.
+1. 📋 **Next:** item 16 (list-driven CI, monthly Debian rebuild), after the
+   fluxer-aio task closes. (The local build scripts are already gone.)
 2. 📋 **Before merging fluxer-aio's first release PR:** item 17 (backup ->
    upgrade -> verify -> clean up). The maintainer does the shared-Postgres
    conversion (separate project) first (2026-11-20); item 17 is not blocked

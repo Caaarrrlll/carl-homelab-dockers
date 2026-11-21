@@ -42,38 +42,12 @@ Build the Debian → Wine → ASA images (and Debian → fluxer-aio) in order. T
 
 ## Build and push
 
-The build scripts push to Docker Hub, so they require the `DOCKERHUB_USER`
-environment variable to be set to **your** Docker Hub username. The scripts
-refuse to run if it is missing, so they cannot accidentally push to the
-repository maintainer's namespace.
+Images are built and pushed only by GitHub Actions (there are no local build
+scripts). The `FROM` lines in the Dockerfiles reference the maintainer's
+published images (for example `caaarrrlll/debian-slim-baseimage:trixie-latest`);
+to build the whole chain from your own bases, change those `FROM` lines.
 
-Windows (PowerShell or `cmd`):
-
-```powershell
-$env:DOCKERHUB_USER = "myuser"
-.\scripts\docker-updater.bat
-```
-
-Linux / macOS:
-
-```bash
-DOCKERHUB_USER=myuser ./scripts/docker-updater.sh
-```
-
-The local scripts skip the parked Fedora image unless `BUILD_FEDORA=1` is
-also set.
-
-Or in VS Code, run the **Docker: Build & Push All** task from
-`dockers.code-workspace` after setting `DOCKERHUB_USER` in your environment.
-
-The `FROM` lines in the Dockerfiles intentionally still reference the
-maintainer's published images (for example
-`caaarrrlll/debian-slim-baseimage:trixie-latest`). Only the tags that are built
-and pushed use `DOCKERHUB_USER`; the base images are pulled from Docker Hub as
-usual. If you want to build the whole chain from your own bases, update the
-`FROM` lines (or the tags in the scripts) accordingly.
-
-CI uses `.github/workflows/build-images.yml` instead. On a push it rebuilds only
+CI is `.github/workflows/build-images.yml`. On a push it rebuilds only
 the affected images, in dependency order: a Debian change rebuilds debian →
 wine → asa and fluxer-aio, a Wine change rebuilds wine → asa, a fluxer-aio
 change rebuilds fluxer-aio only, and a Fedora change rebuilds Fedora only. Tag

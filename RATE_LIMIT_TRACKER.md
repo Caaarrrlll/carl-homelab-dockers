@@ -65,9 +65,14 @@ rewrites only; ASA scripts run the live cluster).
     IDENTICAL over 6 scenarios incl. every Wine launch argument; watchdog
     same statements. Original quoting kept (unquoted vars stay unquoted).
 - [✓] 6. audit.md rows (each image), HISTORY note
-- [⏳] 7. Maintainer: commit with a CI rebuild (verifies all Dockerfiles,
+- [✓] 7. Maintainer chose B: `[skip ci]` commit (a1df1be) + fluxer_only build. Was: commit with a CI rebuild (verifies all Dockerfiles,
   publishes new images incl. ASA) or `[skip ci]` (images unchanged until the
   next real change)
+- [✓] 7b. Local build scripts removed (maintainer, 2026-11-21): deleted
+  `scripts/docker-updater.{sh,bat}`, VS Code build task; AGENTS/README/CLAUDE
+  build docs and `DOCKERHUB_USER` guardrails rewritten (CI-only); ROADMAP
+  item 16 + HISTORY updated; fedora audit note fixed.
+- [ ] 7c. fluxer_only test build of the reformatted fluxer-aio (CI green)
 - [ ] 8. [⏳] Optional: redeploy the reformatted `unraid-readonly.sh` to Unraid
   (same behaviour; only needed to keep the copy identical)
 

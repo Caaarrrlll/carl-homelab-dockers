@@ -33,7 +33,7 @@
 			"path": "docs"
 		},
 		{
-			"name": "Build Scripts",
+			"name": "Scripts",
 			"path": "scripts"
 		}
 	],
@@ -47,24 +47,5 @@
 		"terminal.integrated.defaultProfile.windows": "PowerShell",
 		"docker.commands.build": "docker image build -t ${tag} .",
 		"docker.commands.run": "docker run --rm -d ${exposedPorts} ${tag}"
-	},
-	"tasks": {
-		"version": "2.0.0",
-		"tasks": [
-			{
-				"label": "Docker: Build & Push All",
-				"type": "shell",
-				"command": ".\\scripts\\docker-updater.bat",
-				"options": {
-					"cwd": "${workspaceFolder:Workspace (root)}"
-				},
-				"problemMatcher": [],
-				"presentation": {
-					"reveal": "always",
-					"panel": "dedicated",
-					"clear": true
-				}
-			}
-		]
 	}
 }

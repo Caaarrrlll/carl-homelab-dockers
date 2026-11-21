@@ -25,8 +25,12 @@ and referenced from this file.
 - **One fix as a side effect:** `scripts/docker-updater.bat` had LF line
   endings, which made `cmd.exe` fail at its first `call :buildpush` ("cannot
   find the batch label"), so it never worked. With CRLF it now builds and
-  pushes in order. (The updater scripts are still due for removal under
-  ROADMAP item 16.)
+  pushes in order.
+- **Local build scripts removed** (same day, maintainer's decision):
+  `scripts/docker-updater.sh` / `.bat`, the VS Code "Docker: Build & Push All"
+  task and the `DOCKERHUB_USER` docs/guardrails. Images are only built by
+  GitHub Actions; if the repo ever leaves GitHub, port the CI instead of
+  reviving local scripts.
 
 ## 2026-11-20 — Repo scope after fluxer-aio, CI direction
 
