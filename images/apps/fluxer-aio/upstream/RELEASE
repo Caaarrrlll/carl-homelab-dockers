@@ -1,4 +1,4 @@
-fluxer-release@2026.1118.90548
+fluxer-release@2026.1120.164141
 # Compose bundle this image is built from (official images pinned by digest).
-# url:    https://github.com/fluxerapp/fluxer/releases/download/fluxer-release%402026.1118.90548/fluxer-compose-2026.1118.90548.tar.gz
-# sha256: bdb8d7436787df0dbf690f130b64399465ab7d408ef665831b8224739336077e
+# url:    https://github.com/fluxerapp/fluxer/releases/download/fluxer-release%402026.1120.164141/fluxer-compose-2026.1120.164141.tar.gz
+# sha256: 44efebe0e0e2bde6c7f69e2830e6028be8a515c4c2d1a30b36bf24c86d3dbeab
