@@ -169,9 +169,22 @@ official PostgreSQL apt repository (pinned major, SHA/keyring verified). If
 the server is newer than the client, the backup fails (and so, by default,
 the start), never silently skips.
 
-Open decisions (maintainer): backups inside `/data/backups` or a separate
-template path; fail-closed default confirmed?; how many backups to keep
-(proposal: 3); time limit for verification (proposal: 10 min).
+Decisions (maintainer, 2026-11-21):
+- Backups live inside the fluxer-aio data folder (`/data/backups`).
+- A failed or invalid backup **prevents start-up**, with a clear log message.
+- Keep **3** backups.
+- **Validate every backup**, and never let a bad one cost a good one:
+  - On creation: `pg_restore --list` (archive readable) **and** a full read
+    of every data block (`pg_restore -f /dev/null`), then a SHA-256 written
+    next to the dump. Only then is the backup marked `verified`.
+  - On every start: re-check the SHA-256 of the kept backups; a mismatch is
+    logged loudly and the backup is marked `corrupt` (never deleted).
+  - Retention counts **verified** backups only. Corrupt or unverified ones
+    never push a verified one out, and pruning is skipped entirely while the
+    newest backup is not verified. The last verified backup always stays at
+    least until the next successful update, so an operator sees the problem.
+- Still open: verification time limit (proposal: 10 min); the Postgres major
+  version of the converted server (sets the `pg_dump` client version).
 
 ## Low priority
 
