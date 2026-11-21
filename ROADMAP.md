@@ -92,7 +92,42 @@ Proposed design: restart **inside** the container, never update:
 Directly relevant to housekeeping item 6: while this is parked, an idle crash
 needs a manual restart.
 
-## Low priority
+### 18. Coordinated game update for all ASA servers (explore)
+**Status: 🔭 EXPLORE (added 2026-11-21, maintainer idea).** Plan together
+with item 1: the watchdog never updates, so this is the deliberate update
+path that makes that safe. No code before a planning session.
+**Risk: 🟡 Medium** for detect-and-notify only; **🔴 High** once it stops
+and restarts servers by itself.
+
+Today a game update means stopping every server by hand, restarting one so
+SteamCMD updates the shared install, then starting the rest one at a time.
+Goal: one trigger (manual, or automatic when an update is out) does that
+sequence safely.
+
+Starting point for the planning session:
+
+1. **Where it runs:** on the Unraid host (a User Script), not in a container.
+   Containers can't stop each other without the Docker socket, and giving
+   them the socket is not acceptable. The script itself goes in `scripts/`,
+   with the same sequence written as manual steps in the ASA README.
+2. **Detect:** compare the public build ID of app `2430930`
+   (`steamcmd +app_info_update 1 +app_info_print 2430930`, run inside one
+   container) with `buildid` in the install's `appmanifest_2430930.acf`.
+   Detection alone is safe and could start as a notification only.
+3. **Warn players:** RCON `ServerChat` / broadcast countdown in every
+   container (`docker exec <c> rcon ...`; RCON stays unmapped).
+4. **Stop all** ASA containers (`docker stop -t 60`; the stop handler saves
+   each world). Never continue while any server is still running.
+5. **Update once:** start one "primary" container (or a one-off SteamCMD
+   run) and wait until the update is done and the server is up.
+6. **Start the rest one at a time**, each only after the previous one logs
+   that it is up.
+7. **Guards:** a lock file so two runs can't overlap; abort and notify on any
+   failure instead of retrying; never run during a pending manual action.
+
+Open questions: how to tell "server is up" reliably from the log; whether
+non-primary containers should skip SteamCMD (item 1, point 5); schedule vs
+manual trigger.
 
 ## Future / research
 
@@ -137,6 +172,7 @@ can run without the Steam client, so it may be worth another look.
    (GameAnalytics log flood) done 2026-11-18, see `ROADMAP_HISTORY.md`.
 1. ⏸️ Item 14 (Wine vs Proton) parked 2026-11-21 until its trigger; research
    in `docs/asa-proton-research.md`.
-2. ⏸️ Item 1 stays parked until a dedicated planning session.
+2. ⏸️ Item 1 stays parked until a dedicated planning session; plan item 18
+   (coordinated game update) in the same session.
 
 Rollback for any of these: ASA README → "Rolling back to an earlier image".
