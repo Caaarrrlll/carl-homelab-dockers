@@ -42,6 +42,12 @@ PR #1 as its first real test.
 - [⏳] 7. Live test on Unraid: (a) force update to 5b7582a = first start, no
   backup, release recorded when healthy; (b) merge PR #1, force update =
   backup + verify + prune in the log. Confirmed via read-only access.
+  - (a) PASSED 2026-11-21 (verified on Unraid via read-only access): started
+    11:15:21 UTC, "first start on fluxer-release@2026.1118.90548: no backup
+    needed", recorded as last good at 11:15:52, healthy; state dir 0700 root.
+    Cosmetic: doubled [update-verify] prefix, fixed in the script ([skip ci];
+    ships with the PR #1 merge build).
+  - (b) waiting: maintainer merges PR #1 and force-updates.
 
 ## Active task — monthly scheduled rebuild (2026-11-21)
 

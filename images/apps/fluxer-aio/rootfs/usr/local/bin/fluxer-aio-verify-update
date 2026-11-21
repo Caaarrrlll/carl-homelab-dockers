@@ -18,8 +18,9 @@ POLL_SECONDS=15
 
 # --- Helpers -------------------------------------------------------------------
 
+# The s6 run script already prefixes every line with [update-verify].
 log() {
-    echo "[update-verify] $*"
+    echo "$*"
 }
 
 read_state() {
