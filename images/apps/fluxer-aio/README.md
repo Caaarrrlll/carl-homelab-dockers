@@ -51,8 +51,13 @@ library or the router config is invalid.
   ```sql
   CREATE ROLE fluxer LOGIN PASSWORD '<strong password>';
   CREATE DATABASE fluxer OWNER fluxer;
+  REVOKE ALL ON DATABASE fluxer FROM PUBLIC;
   ```
 
+  The `REVOKE` keeps other apps' roles out of this database. Sharing one
+  Postgres server with other apps (Immich's image, host networking, moving
+  the container, nightly backups): see
+  [`docs/shared-postgres.md`](../../../docs/shared-postgres.md).
   If the server is shared with other apps, check `max_connections`: with the
   defaults below fluxer-aio uses up to ~20 connections. Optional:
   `GRANT pg_read_all_settings TO fluxer;` silences a harmless api warning
@@ -196,6 +201,11 @@ docker exec fluxer-aio fluxer-aio-backup            # back up now (label "manual
 docker exec fluxer-aio fluxer-aio-backup list       # status of every backup
 docker exec fluxer-aio fluxer-aio-backup check      # re-check all checksums
 ```
+
+For a **nightly** backup with an Unraid notification on failure, see
+[`docs/shared-postgres.md`](../../../docs/shared-postgres.md) section 6.
+Nightly backups count toward the 3 kept, so they push the pre-update backup
+out after three nights.
 
 **Postgres version.** The image's backup client is PostgreSQL **18**; it can
 back up Postgres 18 and older servers. Before upgrading your Postgres server

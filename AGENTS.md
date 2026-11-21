@@ -82,6 +82,10 @@ Supporting files:
 - `docs/operations.md` — the operator runbook: setup, updates, manual
   rebuilds and rollback, in plain tool-agnostic steps (see the rule under
   "Conventions").
+- `docs/shared-postgres.md` — fluxer-aio on a Postgres server shared with
+  other apps: one role per app, host networking, a checked procedure to move
+  or rename the database container, autostart order, nightly backups and
+  optional `pg_hba` limits. Linked from the fluxer-aio README.
 - `docs/housekeeping.md` — open **verification** items on the running system
   (under-load re-check, parked Fedora work, idle-crash confirmation on
   Astraeos, autosave check) and a "Record" of confirmed ones (NTSYNC reboot

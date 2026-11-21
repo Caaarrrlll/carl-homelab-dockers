@@ -81,7 +81,9 @@ the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
 - `scripts/` — build/push helpers, plus `unraid-readonly.sh` (allowlist for
   a temporary read-only SSH key on the Unraid host).
 - `docs/` — [`operations.md`](docs/operations.md) (setup / update / rollback
-  procedures), `housekeeping.md` (open checks on the live server), `history/`.
+  procedures), [`shared-postgres.md`](docs/shared-postgres.md) (fluxer-aio on
+  a Postgres server shared with other apps: moving it, nightly backups),
+  `housekeeping.md` (open checks on the live server), `history/`.
 - `templates/` — bare Unraid Docker templates to copy into
   `/boot/config/plugins/dockerMan/templates-user/` and fill in: `asa-wine.xml`
   (this repo's ASA image), `fluxer-aio.xml` (this repo's Fluxer image) and

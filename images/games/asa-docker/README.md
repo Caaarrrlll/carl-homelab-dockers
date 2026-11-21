@@ -129,6 +129,16 @@ disk space and means one download per game update. Things to know:
 | `7777/udp` | Game (`-port`) |
 | `27015/udp` | Query (`-QueryPort`) |
 
+**Ports for a cluster:** give server number `N` (0, 1, 2, …) game port
+`<game base>+N` and query port `<query base>+N`, both UDP; the template uses
+`7760+N` and `27000+N`. Each block is then one contiguous range, so the
+router needs one forwarding rule per block (e.g. game `7760-7769/udp` and
+query `27000-27009/udp`) instead of one per server. To change an existing
+server's port, change **both** the port mapping and the matching flag
+(`-port=` / `-QueryPort=`) in `GAME_PARAMS_EXTRA` (Extra Game Parameters),
+then Apply, which recreates the container. Changing only one of them leaves
+the server unreachable.
+
 RCON runs on `RCON_PORT` (27020) **inside** each container only. It is
 deliberately not mapped to the host, so all servers can use the same port and
 it isn't reachable from the network.
@@ -158,7 +168,8 @@ set in `GameUserSettings.ini` for this (the launch options override it).
 ### Updating the shared `GameUserSettings.ini` / `Game.ini`
 
 All servers read one `ShooterGame/Saved/Config/WindowsServer/` folder, and
-ARK **rewrites `GameUserSettings.ini` when it shuts down**. So replace these
+ARK **rewrites `GameUserSettings.ini` when it shuts down** (and `Game.ini` on
+save). So replace these
 files only while **all** ASA containers are stopped, otherwise a server that
 stops later overwrites your change. On the Unraid host (adjust the source
 path to wherever your master copies live):
@@ -176,6 +187,49 @@ done
 To compare before copying, run
 `diff "$LIVE/GameUserSettings.ini" "$SRC/GameUserSettings.ini"`.
 The live file may contain passwords, so don't paste that output anywhere.
+
+ARK's rewrite changes `Game.ini` without changing its settings: it adds a
+`;METADATA` line and changes the capitalisation of section headers. So a
+byte or checksum comparison always shows a difference. Compare the settings
+instead, for example `diff -iw <(grep -v '^;METADATA' "$LIVE/Game.ini")
+<(grep -v '^;METADATA' "$SRC/Game.ini")`.
+
+## Cluster notes
+
+### Mod lists
+
+Keep one master list of mods (a text file next to your master `.ini`
+copies): a base set every server runs, plus the extra mods of each map.
+Build each server's `SRV_MOD_IDS` from it, with the **map-specific mods
+first** and the base set after them.
+
+Removing a mod from a server can delete everything that came from it (items,
+structures, creatures) on the next save. Before removing one, stop the
+server and back up its save folder
+(`ShooterGame/Saved/SavedArks/<map>`).
+
+### Stack-size overrides
+
+`ConfigOverrideItemMaxQuantity` in `Game.ini` does not work for every item.
+Some keep their built-in limit: for example Nameless Venom
+(`PrimalItemConsumable_NamelessVenom_C`, blueprint under
+`/Game/Aberration/CoreBlueprints/Resources/`) stays at 1, while Snow Owl
+Pellet does stack (both checked 2026-11-21).
+
+Test an override with **new** items, e.g. `cheat GFI <item> 5 0 0` in the
+admin console. Items that were already in an inventory keep their old limit,
+so testing with those tells you nothing.
+
+### Settings loaded from a URL
+
+Some settings load their rules from a web address, for example
+`PassiveProductionConfig=` pointing at a GitHub gist. Use the gist's **raw**
+address pinned to a commit:
+`https://gist.githubusercontent.com/<user>/<gist-id>/raw/<commit-hash>/<file>`.
+Without the commit hash the server reads whatever the gist holds at that
+moment, so an edit could change the servers without anyone noticing. To
+change the rules: edit the gist, then put its new commit hash in the `.ini`
+(using the steps above).
 
 ## Resource limits (`ulimit` and shared memory)
 
