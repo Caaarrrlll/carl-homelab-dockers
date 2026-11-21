@@ -10,6 +10,17 @@ roadmap. Item numbers are never reused.
 
 ---
 
+## 17. fluxer-aio: back up, upgrade, verify, then clean up (done 2026-11-21)
+
+Before a new Fluxer release first starts, fluxer-aio backs up the Fluxer
+database (pg_dump 18 + secrets.env into `/data/backups`), validates it
+(archive list + full read + SHA-256), and does not start Fluxer if that
+fails. The release is recorded as good only after the health check passes
+(10 min), then the newest 3 verified backups are kept; corrupt or failed
+backups are never deleted and never push a good one out. Commits 5b7582a,
+d1d3076; live-tested on Unraid with the 2026.1118.90548 -> 2026.1120.164141
+update. Details: fluxer-aio README "Backups", audit.md, HISTORY 2026-11-21.
+
 ## Completed 2026-11-18: 15. GameAnalytics log flood
 
 - **Problem:** every server logged `database disk image is malformed` and
