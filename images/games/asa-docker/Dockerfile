@@ -7,14 +7,13 @@ LABEL org.opencontainers.image.source="https://github.com/Caaarrrlll/carl-homela
 LABEL org.opencontainers.image.licenses="MIT"
 
 # --- Packages ------------------------------------------------------------------
-# 32-bit libraries for SteamCMD, plus screen, xvfb and winbind (see
-# ROADMAP item 9 before removing screen/xvfb).
+# 32-bit libraries for SteamCMD, plus xvfb and winbind (see ROADMAP item 9
+# before removing xvfb; screen was removed 2026-11-21).
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         lib32gcc-s1 \
         lib32stdc++6 \
         lib32z1 \
-        screen \
         winbind \
         xvfb \
     && rm -rf /var/lib/apt/lists/*

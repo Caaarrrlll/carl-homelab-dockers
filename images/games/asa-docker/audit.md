@@ -13,7 +13,7 @@
 
 ## Current snapshot
 
-- Installs `lib32gcc-s1`, `lib32stdc++6`, `lib32z1`, `screen`, `xvfb`, `winbind`.
+- Installs `lib32gcc-s1`, `lib32stdc++6`, `lib32z1`, `xvfb`, `winbind`.
 - Runs as user `steam` with configurable `UID`/`GID` (defaults `99`/`100`).
 - Stores data in `/serverdata` (`steamcmd/`, `serverfiles/`).
 - Defaults: map `TheIsland_WP`, ports `7777`/`27015`, `VALIDATE=false`,
@@ -54,7 +54,8 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
-| 2026-11-21 | _(this change)_ | Code-style reformat | Dockerfile and `start.sh` / `start-server.sh` / `start-watchdog.sh` reformatted to the code-style standard (4-space indent, `if` blocks instead of `||`/`&&` shortcuts, split long lines; ARK launch URL assembled from pieces). No behaviour change: Dockerfile equivalence check; old vs new scripts produce identical transcripts in stubbed simulations (5 stop-handler scenarios with a real SIGTERM, 6 start-server scenarios incl. every Wine launch argument). Simulated, not tested on Unraid. |
+| 2026-11-21 | _(this change)_ | Remove `screen` | Unused package (no script calls it), removed for a smaller image (ROADMAP 9, part 1); `xvfb` stays for a separate test. No RAM effect. First CI build since the reformat below, so the live test covers both. Not yet tested on Unraid. |
+| 2026-11-21 | `a1df1be` | Code-style reformat | Dockerfile and `start.sh` / `start-server.sh` / `start-watchdog.sh` reformatted to the code-style standard (4-space indent, `if` blocks instead of `||`/`&&` shortcuts, split long lines; ARK launch URL assembled from pieces). No behaviour change: Dockerfile equivalence check; old vs new scripts produce identical transcripts in stubbed simulations (5 stop-handler scenarios with a real SIGTERM, 6 start-server scenarios incl. every Wine launch argument). Simulated, not tested on Unraid. |
 | 2026-11-18 | `d862852` | template: bare, generic defaults | `templates/asa-wine.xml` no longer mirrors the maintainer's server: no share/script references, Server Files default `/mnt/user/appdata/asa-serverfiles`, Mod IDs empty, `NTSYNC` value `0` (matches the image default). README host-side examples use placeholder paths. No image change. |
 | 2026-11-18 | `6a5d2ee` | source label → `carl-homelab-dockers` | Repo renamed on GitHub; `org.opencontainers.image.source` and the template URLs follow. Label-only, committed with `[skip ci]`: ships with the next real build (old URL redirects until then). |
 | 2026-11-18 | `2d07cbf` | template: per-container tmpfs over GameAnalytics | Shared `WINE64/.../AppData/Local/GameAnalytics/<key>/ga.sqlite3` (6.7 MB) was corrupt + full (`malformed`, `db_too_large`), flooding every log. Template Extra Parameters add `--tmpfs /serverdata/serverfiles/WINE64/drive_c/users/steam/AppData/Local/GameAnalytics:rw,size=64m,mode=1777`; no image change. Rolled out with `asa-rollout.sh` + `align-asa-templates.sh` (network share). |

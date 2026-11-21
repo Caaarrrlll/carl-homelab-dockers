@@ -102,6 +102,8 @@ packages use no RAM, so this does **not** lower server memory. Revisit later
 (maintainer, 2026-11-21). The maintainer believes `screen`/`xvfb` were added
 to silence warnings in the container log: when testing, compare the start-up
 log with and without them and keep them if warnings come back.
+**Order:** `screen` first (nothing calls it; it can't affect Wine), then
+`xvfb` as its own change. `screen` removal in test since 2026-11-21.
 **Risk: 🟡 Medium.** Removing a package Wine or SteamCMD quietly relies on
 would only show up at runtime.
 
