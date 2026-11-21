@@ -33,7 +33,7 @@
   `https://github.com/Caaarrrlll/docker-fedora-baseimage`.
 - README title still says "Debian Base Image".
 - Docker Hub tag `fedora-baseimage:latest` is what CI pushes (opt-in
-  `build_fedora`); confirm it matches the actual published tag.
+  in `.github/images.json`); confirm it matches the actual published tag.
 - No `.gitignore` in the repo.
 
 ## Audit checklist

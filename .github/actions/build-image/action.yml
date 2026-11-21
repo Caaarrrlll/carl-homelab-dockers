@@ -1,0 +1,65 @@
+name: Build and push one image
+description: >-
+  Keep the current latest tag as previous (registry-side copy, nothing is
+  downloaded), then build the image without cache and push it as latest plus
+  the rollback tags YYYY-MM-DD and sha-<short commit>, all with the image's
+  tag prefix. Used by .github/workflows/build-images.yml for every image in
+  .github/images.json.
+
+inputs:
+  context:
+    description: Folder with the Dockerfile
+    required: true
+  image:
+    description: Docker Hub repository name
+    required: true
+  tag_prefix:
+    description: Put in front of every tag (Debian base uses "trixie-")
+    required: false
+    default: ""
+  namespace:
+    description: Docker Hub account (the DOCKERHUB_USERNAME secret)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Compute tags
+      id: tags
+      shell: bash
+      env:
+        REPO: ${{ inputs.namespace }}/${{ inputs.image }}
+        PREFIX: ${{ inputs.tag_prefix }}
+      run: |
+        date_tag="$(date -u +%Y-%m-%d)"
+        sha_tag="sha-${GITHUB_SHA::7}"
+        {
+            echo "latest=${REPO}:${PREFIX}latest"
+            echo "previous=${REPO}:${PREFIX}previous"
+            echo "list<<EOF"
+            echo "${REPO}:${PREFIX}latest"
+            echo "${REPO}:${PREFIX}${date_tag}"
+            echo "${REPO}:${PREFIX}${sha_tag}"
+            echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Keep the current image as previous
+      shell: bash
+      env:
+        SRC: ${{ steps.tags.outputs.latest }}
+        DST: ${{ steps.tags.outputs.previous }}
+      run: |
+        if docker buildx imagetools inspect "$SRC" > /dev/null 2>&1; then
+            docker buildx imagetools create -t "$DST" "$SRC"
+        else
+            echo "::notice::$SRC does not exist yet, nothing to keep"
+        fi
+
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        pull: true
+        no-cache: true
+        push: true
+        tags: ${{ steps.tags.outputs.list }}

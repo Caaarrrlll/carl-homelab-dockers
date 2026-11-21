@@ -1,23 +1,37 @@
 name: Build and push images
 
+# Which images are built is decided by .github/scripts/plan-builds.py from the
+# list in .github/images.json (ROADMAP item 16):
+#   push      images whose folder changed (non-.md files) + everything built
+#             on them; a change to the CI files themselves = all non-opt-in
+#   tag v*    all non-opt-in images
+#   schedule  all non-opt-in images (monthly rebuild, 2nd of the month)
+#   manual    the images named in "images" (default: all) + everything built
+#             on them; "dry_run" only shows the plan
+# Images are built level by level (parents first: Debian, then Wine and
+# fluxer-aio, then ASA); images on the same level build in parallel. Every
+# image keeps the replaced latest as :previous and is pushed as latest plus
+# YYYY-MM-DD and sha-<commit> tags (see .github/actions/build-image).
+# Rollback: the replaced images are kept as :previous (Retag image workflow).
+
 on:
   push:
     branches: [main]
     tags: ["v*"]
   # Monthly full rebuild (2nd of the month, 04:23 UTC): picks up Debian point
-  # releases and security fixes. Like a tag/manual run it rebuilds the whole
-  # chain (debian -> wine -> asa, plus fluxer-aio); Fedora stays opt-in.
-  # Rollback: the replaced images are kept as :previous (Retag image workflow).
+  # releases and security fixes for every image built on Debian.
   schedule:
     - cron: "23 4 2 * *"
   workflow_dispatch:
     inputs:
-      build_fedora:
-        description: Also build and push the Fedora base image
-        type: boolean
-        default: false
-      fluxer_only:
-        description: Build only fluxer-aio (skip the debian -> wine -> asa chain)
+      images:
+        description: >-
+          Images to build, comma separated (e.g. fluxer-aio or asa-wine), or "all".
+          Images built on them are rebuilt too. Opt-in images (fedora-base) only when named.
+        type: string
+        default: all
+      dry_run:
+        description: Only show the build plan, build nothing
         type: boolean
         default: false
 
@@ -29,188 +43,109 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  plan:
     runs-on: ubuntu-latest
+    outputs:
+      level0: ${{ steps.plan.outputs.level0 }}
+      level1: ${{ steps.plan.outputs.level1 }}
+      level2: ${{ steps.plan.outputs.level2 }}
     steps:
-      - name: Checkout
+      - name: Checkout (full history, for the changed-files diff)
         uses: actions/checkout@v4
-
-      - name: Detect changed images
-        id: changes
-        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
-        uses: dorny/paths-filter@v3
         with:
-          # 'every': a file counts only if it matches ALL patterns of a filter,
-          # so the '!**/*.md' lines exclude docs. README/audit edits never rebuild.
-          predicate-quantifier: 'every'
-          filters: |
-            debian:
-              - 'images/systems/debian-base/**'
-              - '!**/*.md'
-            fedora:
-              - 'images/systems/fedora-base/**'
-              - '!**/*.md'
-            wine:
-              - 'images/systems/wine-base/**'
-              - '!**/*.md'
-            asa:
-              - 'images/games/asa-docker/**'
-              - '!**/*.md'
-            fluxer:
-              - 'images/apps/fluxer-aio/**'
-              - '!**/*.md'
-            workflow:
-              - '.github/workflows/build-images.yml'
+          fetch-depth: 0
 
-      # Rollback tags: every build is also pushed as <date> and sha-<short>, so
-      # the Unraid template can be pinned back to a known-good image.
-      - name: Compute rollback tags
-        id: tags
-        run: |
-          echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
-          echo "sha=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Plan the build
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          IMAGES: ${{ inputs.images }}
+        run: python3 .github/scripts/plan-builds.py
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+  # One job per dependency level. A level runs when it has images, the plan
+  # is not a dry run, and no earlier level failed (skipped levels are fine).
+  build-level-0:
+    needs: plan
+    if: needs.plan.outputs.level0 != '[]' && !inputs.dry_run
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.level0) }}
+    name: build ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # Keep the image that is about to be replaced as :trixie-previous (registry-side
-      # copy, nothing is downloaded). Gives a one-step rollback target.
-      - name: Keep current Debian base as :trixie-previous
-        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.workflow == 'true'
-        env:
-          SRC: ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-latest
-          DST: ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-previous
-        run: |
-          if docker buildx imagetools inspect "$SRC" > /dev/null 2>&1; then
-            docker buildx imagetools create -t "$DST" "$SRC"
-          else
-            echo "::notice::$SRC does not exist yet, nothing to keep"
-          fi
-
-      - name: Build and push Debian base
-        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.workflow == 'true'
-        uses: docker/build-push-action@v6
+      - uses: ./.github/actions/build-image
         with:
-          context: images/systems/debian-base
-          pull: true
-          no-cache: true
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-${{ steps.tags.outputs.date }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/debian-slim-baseimage:trixie-${{ steps.tags.outputs.sha }}
+          context: ${{ matrix.context }}
+          image: ${{ matrix.image }}
+          tag_prefix: ${{ matrix.tag_prefix }}
+          namespace: ${{ secrets.DOCKERHUB_USERNAME }}
 
-      # Keep the image that is about to be replaced as :previous (registry-side
-      # copy, nothing is downloaded). Gives a one-step rollback target.
-      - name: Keep current Fedora base as :previous
-        if: steps.changes.outputs.fedora == 'true' || (github.event_name == 'workflow_dispatch' && inputs.build_fedora)
-        env:
-          SRC: ${{ secrets.DOCKERHUB_USERNAME }}/fedora-baseimage:latest
-          DST: ${{ secrets.DOCKERHUB_USERNAME }}/fedora-baseimage:previous
-        run: |
-          if docker buildx imagetools inspect "$SRC" > /dev/null 2>&1; then
-            docker buildx imagetools create -t "$DST" "$SRC"
-          else
-            echo "::notice::$SRC does not exist yet, nothing to keep"
-          fi
-
-      - name: Build and push Fedora base
-        if: steps.changes.outputs.fedora == 'true' || (github.event_name == 'workflow_dispatch' && inputs.build_fedora)
-        uses: docker/build-push-action@v6
+  build-level-1:
+    needs: [plan, build-level-0]
+    if: >-
+      always()
+      && needs.plan.result == 'success'
+      && needs.build-level-0.result != 'failure'
+      && needs.build-level-0.result != 'cancelled'
+      && needs.plan.outputs.level1 != '[]'
+      && !inputs.dry_run
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.level1) }}
+    name: build ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
-          context: images/systems/fedora-base
-          pull: true
-          no-cache: true
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/fedora-baseimage:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/fedora-baseimage:${{ steps.tags.outputs.date }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/fedora-baseimage:${{ steps.tags.outputs.sha }}
-
-      # Keep the image that is about to be replaced as :previous (registry-side
-      # copy, nothing is downloaded). Gives a one-step rollback target.
-      - name: Keep current Wine base as :previous
-        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.workflow == 'true'
-        env:
-          SRC: ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:latest
-          DST: ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:previous
-        run: |
-          if docker buildx imagetools inspect "$SRC" > /dev/null 2>&1; then
-            docker buildx imagetools create -t "$DST" "$SRC"
-          else
-            echo "::notice::$SRC does not exist yet, nothing to keep"
-          fi
-
-      - name: Build and push Wine base
-        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.workflow == 'true'
-        uses: docker/build-push-action@v6
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: ./.github/actions/build-image
         with:
-          context: images/systems/wine-base
-          pull: true
-          no-cache: true
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:${{ steps.tags.outputs.date }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/wine-baseimage:${{ steps.tags.outputs.sha }}
+          context: ${{ matrix.context }}
+          image: ${{ matrix.image }}
+          tag_prefix: ${{ matrix.tag_prefix }}
+          namespace: ${{ secrets.DOCKERHUB_USERNAME }}
 
-      # Keep the image that is about to be replaced as :previous (registry-side
-      # copy, nothing is downloaded). Gives a one-step rollback target.
-      - name: Keep current ASA as :previous
-        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.asa == 'true' || steps.changes.outputs.workflow == 'true'
-        env:
-          SRC: ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:latest
-          DST: ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:previous
-        run: |
-          if docker buildx imagetools inspect "$SRC" > /dev/null 2>&1; then
-            docker buildx imagetools create -t "$DST" "$SRC"
-          else
-            echo "::notice::$SRC does not exist yet, nothing to keep"
-          fi
-
-      - name: Build and push ASA
-        if: ((github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) && !inputs.fluxer_only) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.wine == 'true' || steps.changes.outputs.asa == 'true' || steps.changes.outputs.workflow == 'true'
-        uses: docker/build-push-action@v6
+  build-level-2:
+    needs: [plan, build-level-0, build-level-1]
+    if: >-
+      always()
+      && needs.plan.result == 'success'
+      && needs.build-level-0.result != 'failure'
+      && needs.build-level-0.result != 'cancelled'
+      && needs.build-level-1.result != 'failure'
+      && needs.build-level-1.result != 'cancelled'
+      && needs.plan.outputs.level2 != '[]'
+      && !inputs.dry_run
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.level2) }}
+    name: build ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
-          context: images/games/asa-docker
-          pull: true
-          no-cache: true
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:${{ steps.tags.outputs.date }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/asa-wine:${{ steps.tags.outputs.sha }}
-
-      # fluxer-aio depends only on the Debian base (not on Wine). It is rebuilt
-      # with the Debian base, on its own changes, on workflow edits, and on
-      # tag/manual runs (also when fluxer_only is ticked).
-      - name: Keep current fluxer-aio as :previous
-        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.fluxer == 'true' || steps.changes.outputs.workflow == 'true'
-        env:
-          SRC: ${{ secrets.DOCKERHUB_USERNAME }}/fluxer-aio:latest
-          DST: ${{ secrets.DOCKERHUB_USERNAME }}/fluxer-aio:previous
-        run: |
-          if docker buildx imagetools inspect "$SRC" > /dev/null 2>&1; then
-            docker buildx imagetools create -t "$DST" "$SRC"
-          else
-            echo "::notice::$SRC does not exist yet, nothing to keep"
-          fi
-
-      - name: Build and push fluxer-aio
-        if: (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')) || steps.changes.outputs.debian == 'true' || steps.changes.outputs.fluxer == 'true' || steps.changes.outputs.workflow == 'true'
-        uses: docker/build-push-action@v6
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: ./.github/actions/build-image
         with:
-          context: images/apps/fluxer-aio
-          pull: true
-          no-cache: true
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/fluxer-aio:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/fluxer-aio:${{ steps.tags.outputs.date }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/fluxer-aio:${{ steps.tags.outputs.sha }}
+          context: ${{ matrix.context }}
+          image: ${{ matrix.image }}
+          tag_prefix: ${{ matrix.tag_prefix }}
+          namespace: ${{ secrets.DOCKERHUB_USERNAME }}

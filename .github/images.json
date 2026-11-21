@@ -1,0 +1,38 @@
+{
+  "_comment": [
+    "Images built by CI (.github/workflows/build-images.yml), read by .github/scripts/plan-builds.py.",
+    "context:    folder with the Dockerfile; a change to a non-.md file here rebuilds the image.",
+    "image:      Docker Hub repository name (pushed under the DOCKERHUB_USERNAME account).",
+    "tag_prefix: put in front of every tag (latest, previous, YYYY-MM-DD, sha-<commit>).",
+    "parent:     the image in this list it is built FROM; it is rebuilt whenever the parent is.",
+    "opt_in:     never built by the monthly schedule, tags or 'all'; only when named or its own files change.",
+    "Adding an image: one entry here, plus its name in the Retag workflow's image list."
+  ],
+  "images": {
+    "debian-base": {
+      "context": "images/systems/debian-base",
+      "image": "debian-slim-baseimage",
+      "tag_prefix": "trixie-"
+    },
+    "wine-base": {
+      "context": "images/systems/wine-base",
+      "image": "wine-baseimage",
+      "parent": "debian-base"
+    },
+    "asa-wine": {
+      "context": "images/games/asa-docker",
+      "image": "asa-wine",
+      "parent": "wine-base"
+    },
+    "fluxer-aio": {
+      "context": "images/apps/fluxer-aio",
+      "image": "fluxer-aio",
+      "parent": "debian-base"
+    },
+    "fedora-base": {
+      "context": "images/systems/fedora-base",
+      "image": "fedora-baseimage",
+      "opt_in": true
+    }
+  }
+}

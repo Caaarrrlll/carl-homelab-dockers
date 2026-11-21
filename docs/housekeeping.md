@@ -9,7 +9,7 @@ discarded. Code/doc work to do later lives in `ROADMAP.md`.
 | # | Item | Status | Notes |
 |---|---|---|---|
 | 2 | Re-check CPU at full player load | **optional** | Idle reference (2026-11-07): ~2.7–2.9% of one core vs ~high-3% pre-NTSYNC. Expect the gap to widen with concurrent player/entity load; compare `docker stats` CPU% and tick responsiveness under a full session. |
-| 3 | Fedora base image re-activation | **parked** | `images/systems/fedora-base` is unused and excluded from CI tags/manual chains (`build_fedora` defaults to `false`). Re-enable when a workload actually needs it (see AGENTS.md note). |
+| 3 | Fedora base image re-activation | **parked** | `images/systems/fedora-base` is unused and opt-in in CI (`.github/images.json`: built only when named or its files change). Re-enable when a workload actually needs it (see AGENTS.md note). |
 | 6 | Confirm the idle-crash fixes on newer maps | **Lost Colony confirmed 2026-11-21; Astraeos still to confirm** | Crashes seen on Astraeos / Lost Colony after a long idle period. Changes made 2026-11-17: `vm.max_map_count=1048576`, a swapfile on the cache drive, `--shm-size=4g`, `ulimit -s 8192`. Leave a server on one of these maps idle past the old crash window, then check uptime and the log. If it still crashes, note which change to revisit. |
 | 8 | Confirm autosave every `AUTOSAVE_MINUTES` (15) | **pending** | ARK receives `?AutoSavePeriodMinutes=15` on its launch line (confirmed in the `Commandline:` log entry 2026-11-17). Still to see: a world-save entry roughly every 15 minutes in a server's `<MAP>-ShooterGame.log` (e.g. `grep -iE "sav(ed|ing)" …/Logs/Astraeos_WP-ShooterGame.log \| tail`). |
 

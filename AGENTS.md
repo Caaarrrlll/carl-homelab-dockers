@@ -65,7 +65,9 @@ Supporting files:
   code-navigation tool used by coding agents (`project.yml`, bash language
   server). Its own `.gitignore` keeps `cache/` and `project.local.yml`
   (machine-local overrides) out of git. Keep committed files LF-only.
-- `.github/workflows/build-images.yml` — CI build/push workflow.
+- `.github/workflows/build-images.yml` — CI build/push workflow; what it
+  builds comes from `.github/images.json` via `.github/scripts/plan-builds.py`,
+  and every image is built by `.github/actions/build-image`.
 - `.github/workflows/retag-image.yml` — manual, registry-side retag on Docker
   Hub (rollback / pin a build) without local Docker.
 - `.github/workflows/fluxer-release-watch.yml` — weekly (Mondays) and manual:
@@ -136,16 +138,31 @@ maintainer's published images (`caaarrrlll/...`), so the dependency chain
 always builds on those public bases.
 
 CI (`Build and push images`) runs on pushes to `main`, `v*` tags, manual
-dispatch, and **monthly** (2nd of the month, 04:23 UTC: a scheduled full
-rebuild of debian → wine → asa + fluxer-aio, to pick up Debian point releases
-and security fixes; Fedora stays opt-in). GitHub pauses scheduled workflows
-in a repo with no activity for 60 days; re-enable it under Actions if so. On a normal push it only rebuilds affected images and their
-dependents: Debian changes trigger debian → wine → asa (+ fluxer-aio); Wine
-changes trigger wine → asa; fluxer-aio changes trigger fluxer-aio only; a change
-to the workflow file itself triggers debian → wine → asa + fluxer-aio. Tag and
-manual runs rebuild all of those; the manual `fluxer_only` input builds just
-fluxer-aio (skipping the debian → wine → asa chain). Fedora is independent and
-is excluded from tag/manual chains unless the `build_fedora` input is checked. Every build uses `pull: true` and
+dispatch, and **monthly** (2nd of the month, 04:23 UTC, to pick up Debian
+point releases and security fixes). GitHub pauses scheduled workflows in a
+repo with no activity for 60 days; re-enable it under Actions if so.
+
+**What gets built is decided from one list**, `.github/images.json` (folder,
+Docker Hub name, tag prefix, parent image, opt-in), by
+`.github/scripts/plan-builds.py` (stdlib Python; the plan is shown in every
+run's summary):
+
+- **push:** images whose folder has a changed non-`.md` file, plus every
+  image built on them, transitively (Debian → Wine, ASA and fluxer-aio;
+  Wine → ASA). A change to the CI files themselves (the workflow,
+  `images.json`, the planner, `.github/actions/build-image`) rebuilds every
+  non-opt-in image.
+- **tag `v*` and the monthly schedule:** every non-opt-in image.
+- **manual:** the images named in the `images` input (default `all`), plus
+  everything built on them; `dry_run` only shows the plan.
+- **opt-in** images (Fedora) build only when named or when their own files
+  change.
+
+Images build level by level (parents first; images on the same level, such
+as Wine and fluxer-aio, in parallel); a failed level stops the later ones.
+Each image goes through `.github/actions/build-image`. **Adding an image** =
+one entry in `images.json` plus its name in the Retag workflow's choice list
+(the planner warns if it is missing). Every build uses `pull: true` and
 `no-cache: true`, so base images and packages are always fresh (and every
 rebuild is a full one). Each image is pushed as `latest` (Debian:
 `trixie-latest`) **plus** rollback tags `YYYY-MM-DD` and `sha-<short commit>`
@@ -157,9 +174,9 @@ the containers in Unraid, or pin the template's Repository to one of those
 tags.
 Changes under `templates/`, `docs/`, root files and **any `*.md` file**
 (including image READMEs and `audit.md`) do not trigger builds; the path
-filter excludes `**/*.md`. A change to the workflow file itself rebuilds
-debian → wine → asa and fluxer-aio, so put `[skip ci]` in the commit message
-when a workflow edit shouldn't rebuild anything (doc-only commits always carry
+planner ignores `*.md`. A change to the CI files themselves rebuilds every
+non-opt-in image, so put `[skip ci]` in the commit message when such an edit
+shouldn't rebuild anything (doc-only commits always carry
 `[skip ci]`). It expects repository secrets
 `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`.
 
@@ -280,11 +297,10 @@ not tested on Unraid").
   images; CI pushes to the Docker Hub account in the `DOCKERHUB_USERNAME`
   secret. A fork builds on the maintainer's public base images unless it
   changes the `FROM` lines.
-- Fedora CI is intentionally opt-in: the `build_fedora` input defaults to
-  `false`, and Fedora is excluded from tag/manual chains because the image is
-  not currently used and still consumes Actions job time. Re-enable it when
-  Fedora is actually needed by setting the input default to `true` or adding
-  Fedora back to the chain conditions.
+- Fedora CI is intentionally opt-in (`"opt_in": true` in `.github/images.json`):
+  the image is not currently used and still consumes Actions job time. It
+  builds only when named in a manual run or when its own files change.
+  Re-enable it by removing `opt_in`.
 - **All ASA cluster containers share one `/serverdata/serverfiles` install**
   (deliberate: one download per game update, less disk). Never add behaviour
   that runs SteamCMD automatically while other servers may be running

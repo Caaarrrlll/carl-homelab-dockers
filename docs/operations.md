@@ -60,15 +60,20 @@ build needs.
 
 1. GitHub → **Actions** → **Build and push images** → **Run workflow**.
 2. Branch: `main`. Options:
-   - nothing ticked: rebuilds Debian → Wine → ASA and fluxer-aio;
-   - **fluxer_only**: rebuilds only fluxer-aio;
-   - **build_fedora**: also builds the (unused) Fedora base image.
+   - **images:** `all` (default) rebuilds Debian → Wine → ASA and
+     fluxer-aio; or name images, comma separated, e.g. `fluxer-aio` or
+     `asa-wine`. Images built on a named one are rebuilt too (naming
+     `wine-base` also rebuilds `asa-wine`). The names are in
+     `.github/images.json`; the unused Fedora image builds only when named
+     (`fedora-base`).
+   - **dry_run:** tick it to only see which images would be built (shown in
+     the run's summary), without building anything.
 3. **Run workflow**, then wait until the run shows a green check (about
    10–30 minutes). A red cross means nothing usable was published for the
    failed image; the previous version is still on `latest`.
 
 Command-line alternative (GitHub CLI, if installed and logged in):
-`gh workflow run build-images.yml --ref main -f fluxer_only=false`.
+`gh workflow run build-images.yml --ref main -f images=fluxer-aio`.
 
 ## 3. Update a running container on Unraid
 

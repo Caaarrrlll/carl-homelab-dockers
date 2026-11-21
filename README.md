@@ -52,14 +52,16 @@ scripts). The `FROM` lines in the Dockerfiles reference the maintainer's
 published images (for example `caaarrrlll/debian-slim-baseimage:trixie-latest`);
 to build the whole chain from your own bases, change those `FROM` lines.
 
-CI is `.github/workflows/build-images.yml`. On a push it rebuilds only
-the affected images, in dependency order: a Debian change rebuilds debian →
-wine → asa and fluxer-aio, a Wine change rebuilds wine → asa, a fluxer-aio
-change rebuilds fluxer-aio only, and a Fedora change rebuilds Fedora only. Tag
-pushes, manual dispatches and a **monthly scheduled run** (2nd of each month,
-for Debian updates) rebuild debian → wine → asa and fluxer-aio; tick
-`fluxer_only` on a manual run to build just fluxer-aio. Fedora is excluded
-unless you tick `build_fedora` on a manual run. New Fluxer releases arrive as
+CI is `.github/workflows/build-images.yml`; the images it knows are listed in
+`.github/images.json`. On a push it rebuilds only the affected images and
+everything built on them, in dependency order: a Debian change rebuilds
+debian → wine → asa and fluxer-aio, a Wine change rebuilds wine → asa, a
+fluxer-aio change rebuilds fluxer-aio only, and a Fedora change rebuilds
+Fedora only. Tag pushes and a **monthly scheduled run** (2nd of each month,
+for Debian updates) rebuild everything except Fedora. A manual run builds
+the images you name (default `all`) plus everything built on them; tick
+`dry_run` to only see the plan. Each run's summary shows what was built and
+why. New Fluxer releases arrive as
 a pull request from the **Fluxer release watch** workflow (weekly, or Actions →
 Fluxer release watch → Run workflow); merging it rebuilds fluxer-aio. Markdown
 files (READMEs, `audit.md`, docs) never trigger a rebuild; add `[skip ci]` to a

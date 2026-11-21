@@ -31,6 +31,16 @@ and referenced from this file.
   task and the `DOCKERHUB_USER` docs/guardrails. Images are only built by
   GitHub Actions; if the repo ever leaves GitHub, port the CI instead of
   reviving local scripts.
+- **CI driven by one list of images** (ROADMAP item 16). Motivation: each
+  new image needed copied workflow steps, longer hand-written conditions and
+  special inputs (`fluxer_only`, `build_fedora`). Now `.github/images.json`
+  lists the images and their parents, `.github/scripts/plan-builds.py`
+  decides what to build (same rules as before: dependents follow their base,
+  `*.md` ignored, CI-file changes and tag/monthly runs build everything
+  non-opt-in, Fedora opt-in) and shows the plan in the run summary, and one
+  composite action builds every image. Images on the same level (Wine,
+  fluxer-aio) now build in parallel. Manual runs take an `images` list and a
+  `dry_run` switch. Adding an image is one list entry.
 - **fluxer-aio backs up its database before every Fluxer update** (ROADMAP
   item 17). Motivation: Fluxer migrates its database on start and updates now
   arrive regularly. Maintainer's rules: backups inside the fluxer-aio data
