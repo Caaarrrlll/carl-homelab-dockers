@@ -31,6 +31,12 @@ and referenced from this file.
   task and the `DOCKERHUB_USER` docs/guardrails. Images are only built by
   GitHub Actions; if the repo ever leaves GitHub, port the CI instead of
   reviving local scripts.
+- **Operations guide for anyone** (`docs/operations.md`): setup, updates,
+  manual rebuilds and rollback as plain steps in the GitHub/Unraid web UIs,
+  linked from the README. Motivation: the maintainer can't know who (or which
+  assistant) will run this later, so procedures must not depend on a specific
+  agent or on repo history. Made a rule in AGENTS.md (Conventions + the
+  docs-alignment checklist).
 - **Monthly scheduled rebuild** of all images (2nd of the month, 04:23 UTC):
   Debian ships point releases about every two months and security fixes
   continuously, and the base image runs `apt-get upgrade` on every build, so

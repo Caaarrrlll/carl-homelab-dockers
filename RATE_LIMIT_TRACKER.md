@@ -24,6 +24,12 @@ item 16; the list-driven redesign stays open there.
     detection skipped. AGENTS/README CI text, ROADMAP 16, HISTORY updated.
 - [✓] 2. Committed with `[skip ci]` (no immediate rebuild). First scheduled
   run: 2026-12-02 04:23 UTC. Optional: a manual run (same path) to test now.
+- [✓] 3. Operator runbook for anyone (maintainer request, 2026-11-21):
+  `docs/operations.md` (how builds happen, manual rebuild, updating on
+  Unraid, rollback incl. "monthly rebuild moves latest forward again" + pin
+  by tag, Fluxer release PRs, first-time setup, troubleshooting), linked
+  from README, ASA + fluxer-aio READMEs. Rule added to AGENTS.md
+  (Conventions + docs-alignment row). Links checked; no agent/tool names.
 
 ## Active task — reformat Dockerfiles and scripts to the readability standard (2026-11-21)
 

@@ -77,6 +77,9 @@ Supporting files:
   revocable read-only key on Unraid (allowlisted `docker ps`/`logs`/`inspect`
   without env/`stats`, `ls` under one appdata folder). Runs from the flash
   drive, not from this repo; see the header for install and revocation.
+- `docs/operations.md` — the operator runbook: setup, updates, manual
+  rebuilds and rollback, in plain tool-agnostic steps (see the rule under
+  "Conventions").
 - `docs/housekeeping.md` — open **verification** items on the running system
   (NTSYNC reboot persistence, under-load re-check, parked Fedora work,
   template verification, idle-crash confirmation). **Check/confirm these
@@ -162,6 +165,13 @@ when a workflow edit shouldn't rebuild anything (doc-only commits always carry
 
 ## Conventions
 
+- **Operational procedures are written for anyone.** Every setup, update,
+  rebuild and rollback procedure lives in `docs/operations.md` (general) or
+  the image's README (image-specific, linked from there) as numbered steps a
+  person can follow in the GitHub and Unraid web UIs. No procedure may depend
+  on a particular AI assistant, its memory, or a local helper script; a
+  command-line alternative is optional and comes second. We cannot know who
+  will operate this, so the README must be enough.
 - Each Dockerfile keeps `org.opencontainers.image.*` labels (`authors`,
   `source`, `licenses`).
 - Base images install only a minimal set of packages with
@@ -196,6 +206,7 @@ Apply whatever rows match the change, **in the same commit**:
 | CI workflow or build scripts | The CI/build sections of this file and the root `README.md`. |
 | Anything a future reader would ask "when/why did this change?" about | A dated entry in `HISTORY.md` (newest first, `## YYYY-MM-DD — <topic>`), with the **motivation** as well as the change. Extend today's entry rather than adding a second one for the same day. |
 | Files or folders at the repo root | "Layout" / "Supporting files" in this file and the root `README.md`. |
+| A setup, update, rebuild or rollback procedure (new or changed) | `docs/operations.md` (and/or the image README section it links to), in plain tool-agnostic steps. |
 | Something to verify later on the live server | A row in `docs/housekeeping.md`; move it to "Record" with a date once confirmed. |
 | A problem you found but aren't fixing now | An item in `ROADMAP.md` (next free number, with a Risk rating). Once done, move it to `ROADMAP_HISTORY.md` and note the fix in the audit/history. |
 | A multi-step task | Its checklist in `RATE_LIMIT_TRACKER.md` first; when done, move it to `RATE_LIMIT_TRACKER_HISTORY.md`. |

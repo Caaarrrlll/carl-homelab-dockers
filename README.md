@@ -12,6 +12,11 @@ Related project: the chat bot for Discord and Fluxer lives in its own repo,
 [Caaarrrlll/botsu](https://github.com/Caaarrrlll/botsu) (own CI, image and
 Unraid template).
 
+**Running, updating or rolling back these images?** Follow
+[`docs/operations.md`](docs/operations.md): plain step-by-step procedures for
+setup, updates, manual rebuilds and rollback, usable by anyone (or any
+assistant) without knowing this repository's history.
+
 (Formerly `carl-gaming-dockers`, renamed 2026-11-18; the old GitHub URL
 redirects.)
 
@@ -73,7 +78,8 @@ the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
 - `images/apps/` — self-hosted application images (e.g. `fluxer-aio`).
 - `scripts/` — build/push helpers, plus `unraid-readonly.sh` (allowlist for
   a temporary read-only SSH key on the Unraid host).
-- `docs/` — design notes.
+- `docs/` — [`operations.md`](docs/operations.md) (setup / update / rollback
+  procedures), `housekeeping.md` (open checks on the live server), `history/`.
 - `templates/` — bare Unraid Docker templates to copy into
   `/boot/config/plugins/dockerMan/templates-user/` and fill in: `asa-wine.xml`
   (this repo's ASA image), `fluxer-aio.xml` (this repo's Fluxer image) and

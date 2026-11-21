@@ -158,6 +158,10 @@ first service that fails its own health endpoint.
 
 ## Updating to a new Fluxer release
 
+Step-by-step (updating, rolling back, restoring a backup) for anyone
+operating the server: [`docs/operations.md`](../../../docs/operations.md)
+sections 3–5.
+
 Fluxer publishes releases often; fluxer-aio follows them through a **pull
 request**, never automatically:
 

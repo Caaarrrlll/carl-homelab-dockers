@@ -283,6 +283,9 @@ others.
   by SteamCMD. A rollback undoes image changes, not ASA game updates.
 - **Saves are not touched** by either option. Restore saves from the weekly
   backup if you need to.
+- **The monthly rebuild moves `latest` forward again** (2nd of each month), as
+  does any new build. Option A lasts until then; use Option B to stay on an
+  older version longer. General procedures: [`docs/operations.md`](../../../docs/operations.md).
 - **Base images** (`wine-baseimage`, `debian-slim-baseimage`) can be rolled
   back the same way, but the running server only uses `asa-wine`, which
   already contains them. Rolling back `asa-wine` is almost always enough.
