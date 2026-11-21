@@ -47,6 +47,9 @@ PR #1 as its first real test.
     needed", recorded as last good at 11:15:52, healthy; state dir 0700 root.
     Cosmetic: doubled [update-verify] prefix, fixed in the script ([skip ci];
     ships with the PR #1 merge build).
+  - PR #1 refreshed by release-watch run 44898370151 onto current main:
+    now 2026.1118.90548 -> 2026.1120.164141 (5 digests, env unchanged,
+    Meilisearch unchanged), test build + self-test passed, MERGEABLE/CLEAN.
   - (b) waiting: maintainer merges PR #1 and force-updates.
 
 ## Active task — monthly scheduled rebuild (2026-11-21)

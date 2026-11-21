@@ -291,8 +291,9 @@ def main():
               "- Read the env changes above: new required settings, renamed ports or",
               "  internal addresses (gen-env.py stops on addresses it can't map).",
               "- Check `audit.md` snapshot notes (Node/ERTS/library versions) if images changed.",
-              "- Merging pushes to `main` and rebuilds fluxer-aio; then Force Update on Unraid.",
-              "  Fluxer migrates its database on start: back up Postgres and `/data` first."]
+              "- Merging pushes to `main` and rebuilds fluxer-aio; then force update on Unraid.",
+              "  The container backs up and validates the database before the new release",
+              "  starts (README \"Backups\"); if that fails, Fluxer does not start."]
     summary = "\n".join(lines) + "\n"
     print(summary)
     if a.summary:
