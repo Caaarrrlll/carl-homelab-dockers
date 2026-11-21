@@ -72,7 +72,10 @@ rewrites only; ASA scripts run the live cluster).
   `scripts/docker-updater.{sh,bat}`, VS Code build task; AGENTS/README/CLAUDE
   build docs and `DOCKERHUB_USER` guardrails rewritten (CI-only); ROADMAP
   item 16 + HISTORY updated; fedora audit note fixed.
-- [ ] 7c. fluxer_only test build of the reformatted fluxer-aio (CI green)
+- [✓] 7c. fluxer_only build of the reformatted fluxer-aio: run 44872615929
+  GREEN 2026-11-21, self-test "all checks passed" (2 native modules). New
+  `fluxer-aio:latest` published (formatting only; old one kept as
+  `:previous`). Updating the container on Unraid is optional.
 - [ ] 8. [⏳] Optional: redeploy the reformatted `unraid-readonly.sh` to Unraid
   (same behaviour; only needed to keep the copy identical)
 
