@@ -9,6 +9,29 @@ move its checklist section here, newest first.
 
 ---
 
+## ROADMAP 14: Wine vs Proton / Proton-GE research (done 2026-11-21)
+
+Research only, no image changes. Scope: the ASA server (maintainer did not
+widen it). Output: `docs/asa-proton-research.md`, then a decision.
+
+- [✓] 1. Checklist + research doc
+  - `docs/asa-proton-research.md`; listed in AGENTS.md and README.md
+- [✓] 2. GE-Proton headless without Steam: `proton run` direct, two env
+  vars, no umu/pressure-vessel; Debian -> asa-proton, no middle image
+- [✓] 3. Existing images reviewed: mschnitzer, ferment9348, ludix0, azixus,
+  sknnr (web sources, not tested)
+- [✓] 4. Performance/stability: no Wine-vs-Proton server benchmark exists;
+  GE-Proton >= 10-10 uses NTSYNC by default; GE-Proton 11 hang reports
+- [✓] 5. Shared install: every image uses per-server installs/prefixes;
+  Proton upgrades its prefix itself -> per-container prefix required
+- [✓] 6. Recommendation written: don't migrate; park item 14 with a trigger;
+  item 9 can be unblocked. ROADMAP 14 points at the doc.
+- [✓] 7. Maintainer decided (2026-11-21): item 14 parked with a trigger;
+  item 9 unblocked (image size only: unused packages use no RAM). Goal for
+  any later experiment is lower RAM per server.
+
+---
+
 ## CI driven by one list of images, ROADMAP 16 (done 2026-11-21)
 
 Must keep: dependents rebuild transitively (debian -> wine, asa, fluxer-aio;

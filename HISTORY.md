@@ -64,6 +64,13 @@ and referenced from this file.
   maintainer chose to rebuild **everything** that follows Debian (Wine, ASA,
   fluxer-aio), not only the base, because rollback is easy (`:previous`,
   date/`sha-` tags, Retag workflow). Weekly was rejected as churn.
+- **Wine vs GE-Proton for ASA researched and parked** (ROADMAP 14).
+  GE-Proton now runs without Steam (`proton run` directly), but nothing shows
+  it runs the ASA server better or with less RAM than Wine 11 + NTSYNC, the
+  idle crashes that prompted the item are fixed under Wine, and Proton's
+  self-upgrading prefix conflicts with the shared install. Parked until a
+  Wine-specific problem appears; see `docs/asa-proton-research.md`. Item 9
+  (`screen`/`xvfb`) unblocked; it shrinks the image but saves no RAM.
 
 ## 2026-11-20 — Repo scope after fluxer-aio, CI direction
 

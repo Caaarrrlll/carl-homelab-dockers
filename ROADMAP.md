@@ -95,9 +95,13 @@ needs a manual restart.
 ## Low priority
 
 ### 9. Possibly unused packages in the ASA image
-**Status: ⛔ BLOCKED by item 14 (2026-11-18).** A Proton/Proton-GE image may
-need `xvfb` (headless display) or similar, so don't remove anything until
-the Proton research says what a future image needs.
+**Status: 🟢 OPEN, low priority (unblocked 2026-11-21).** Item 14's research
+is done: a Proton image would be separate with its own package list, so this
+no longer waits for it. Gain is image size and build time only: unused
+packages use no RAM, so this does **not** lower server memory. Revisit later
+(maintainer, 2026-11-21). The maintainer believes `screen`/`xvfb` were added
+to silence warnings in the container log: when testing, compare the start-up
+log with and without them and keep them if warnings come back.
 **Risk: 🟡 Medium.** Removing a package Wine or SteamCMD quietly relies on
 would only show up at runtime.
 
@@ -108,8 +112,14 @@ without them and remove them if nothing breaks (smaller image, faster
 ## Future / research
 
 ### 14. Chore: Wine vs Proton / Proton-GE for the ASA server
-**Status: 🔭 FUTURE (added 2026-11-17).** Research first; no code until the
-research says Proton is worth trying.
+**Status: ⏸️ PARKED (research done 2026-11-21, maintainer decision).**
+Findings: [`docs/asa-proton-research.md`](docs/asa-proton-research.md).
+No migration and no Proton image for now: no evidence Proton runs ASA better
+or uses less RAM than Wine 11 + NTSYNC. **Trigger to restart:** a
+Wine-specific problem Wine can't fix (e.g. Astraeos keeps crashing at idle,
+or a game update breaks under WineHQ stable). Then follow steps 2-4 below
+with the additions in the research doc (no middle image, pinned GE-Proton,
+per-container prefix).
 **Risk: 🟢 Low** for the research; **🔴 High** for any later migration
 (new runtime under all 13 servers and the shared install).
 
@@ -140,9 +150,9 @@ can run without the Steam client, so it may be worth another look.
 
 0. **Test first:** done 2026-11-18 (housekeeping items 5 + 7 closed). Item 15
    (GameAnalytics log flood) done 2026-11-18, see `ROADMAP_HISTORY.md`.
-1. 🔭 **P1 (was P2):** item 14 (Wine vs Proton / Proton-GE research).
-2. ⛔ Item 9 (`screen`/`xvfb`) stays blocked until item 14's research is
-   done.
+1. Item 9 (`screen`/`xvfb` removal test), low priority: smaller image only.
+2. ⏸️ Item 14 (Wine vs Proton) parked 2026-11-21 until its trigger; research
+   in `docs/asa-proton-research.md`.
 3. ⏸️ Item 1 stays parked until a dedicated planning session.
 
 Rollback for any of these: ASA README → "Rolling back to an earlier image".

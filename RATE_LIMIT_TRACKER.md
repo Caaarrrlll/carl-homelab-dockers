@@ -266,6 +266,6 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
 Previous (2026-11-18): Fluxer / Stoat research
 (see `RATE_LIMIT_TRACKER_HISTORY.md`).
 
-Next after this (maintainer to confirm): ROADMAP item 14, Wine vs Proton / Proton-GE
-research (now P1). Item 9 stays blocked until item 14's research is done.
+ROADMAP item 14 research done and parked 2026-11-21 (see
+`RATE_LIMIT_TRACKER_HISTORY.md`); item 9 unblocked, low priority.
 (Old `GameAnalytics.bak-*` folder and `ga-find.txt` removed by the maintainer, 2026-11-18.)

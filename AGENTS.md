@@ -86,6 +86,9 @@ Supporting files:
   other apps: one role per app, host networking, a checked procedure to move
   or rename the database container, autostart order, nightly backups and
   optional `pg_hba` limits. Linked from the fluxer-aio README.
+- `docs/asa-proton-research.md` — research for ROADMAP item 14 (Wine vs
+  GE-Proton for the ASA server): findings, sources, recommendation. Move it
+  to `docs/history/` when item 14 is closed.
 - `docs/housekeeping.md` — open **verification** items on the running system
   (under-load re-check, parked Fedora work, idle-crash confirmation on
   Astraeos, autosave check) and a "Record" of confirmed ones (NTSYNC reboot
