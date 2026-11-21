@@ -10,6 +10,18 @@ roadmap. Item numbers are never reused.
 
 ---
 
+## 16. CI driven by one list of images (done 2026-11-21)
+
+`.github/images.json` lists every image and its parent;
+`.github/scripts/plan-builds.py` decides what to build (push: changed images
+plus everything built on them; CI-file changes, tags and the monthly schedule:
+all non-opt-in; manual: named images or all; Fedora opt-in) and prints the
+plan in the run summary; `.github/actions/build-image` builds and tags every
+image; build jobs run per dependency level (Wine and fluxer-aio in parallel).
+Local build scripts removed and the monthly schedule added the same day.
+Commits 0db7510, db5aadf, 3596ce6; dry run 44900714021 and fluxer-aio build
+44900748621 green.
+
 ## 17. fluxer-aio: back up, upgrade, verify, then clean up (done 2026-11-21)
 
 Before a new Fluxer release first starts, fluxer-aio backs up the Fluxer

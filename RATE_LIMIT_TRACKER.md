@@ -11,38 +11,6 @@ Legend: `[ ]` pending · `[•]` in progress (list the files it touches) · `[�
 done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintainer
 (live Unraid action or decision).
 
-## Active task — CI driven by one list of images (ROADMAP 16, 2026-11-21)
-
-Must keep: dependents rebuild transitively (debian -> wine, asa, fluxer-aio;
-wine -> asa); monthly schedule = everything non-opt-in; tag = everything
-non-opt-in; Fedora opt-in (built only when named or its own files change);
-workflow/CI-file change = everything non-opt-in; `*.md`-only change = none;
-`[skip ci]`; keep-`:previous` + date/`sha-` tags (Debian `trixie-` prefix);
-a fluxer-aio change rebuilds fluxer-aio (release watch relies on it).
-
-- [✓] 1. `.github/images.json` (name, context, image, tag prefix, parent,
-  opt-in) — JSON so the planner needs only the Python stdlib
-- [✓] 2. `.github/scripts/plan-builds.py`: push (git diff before..after,
-  transitive dependents), schedule/tag (all non-opt-in), manual (named images
-  + dependents, or `all`); outputs one matrix per dependency level; run
-  summary; checks the Retag workflow lists every image
-- [✓] 3. `.github/actions/build-image` composite action (keep :previous,
-  build, push latest/date/sha tags) so the steps exist once
-- [✓] 4. Rewrite `build-images.yml`: plan job + build jobs per level (matrix,
-  fail-fast off); manual inputs `images` (default `all`) + `dry_run`
-  replace `fluxer_only` / `build_fedora`
-- [✓] 5. Local tests: planner vs today's behaviour for every trigger type;
-  YAML parse; re-read `if:`/`needs`
-  - Done 2026-11-21: planner 23/23 vs old behaviour (push per image,
-    transitive dependents, md/docs/templates ignored, CI-file changes = all,
-    Fedora opt-in, new branch, tag, schedule, manual by entry or Docker Hub
-    name, unknown name = error) + a real git diff; levels debian -> wine &
-    fluxer-aio (parallel) -> asa. Workflow, action, images.json parse.
-- [✓] 6. Docs: AGENTS/README CI, operations.md section 2, CLAUDE guardrail,
-  HISTORY; ROADMAP 16 -> history
-- [•] 7. Rollout: commit `[skip ci]`; manual dry run (plan matches); real
-  run for fluxer-aio only (CI green)
-
 ## Active task — build `caaarrrlll/fluxer-aio` (2026-11-18)
 
 **Status 2026-11-20:** steps 1-9 done; fluxer-aio runs healthy; release
