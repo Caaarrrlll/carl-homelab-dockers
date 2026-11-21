@@ -81,9 +81,9 @@ Supporting files:
   rebuilds and rollback, in plain tool-agnostic steps (see the rule under
   "Conventions").
 - `docs/housekeeping.md` — open **verification** items on the running system
-  (NTSYNC reboot persistence, under-load re-check, parked Fedora work,
-  template verification, idle-crash confirmation). **Check/confirm these
-  items later**; item 1 is a functional dependency on every Unraid reboot.
+  (under-load re-check, parked Fedora work, idle-crash confirmation on
+  Astraeos, autosave check) and a "Record" of confirmed ones (NTSYNC reboot
+  persistence confirmed 2026-11-21). **Check/confirm these items later.**
 - `ROADMAP.md` — known issues and improvement ideas that need a **code or
   doc change** later, grouped by priority, plus the standing policy.
 - `ROADMAP_HISTORY.md` — archive of completed roadmap items.
