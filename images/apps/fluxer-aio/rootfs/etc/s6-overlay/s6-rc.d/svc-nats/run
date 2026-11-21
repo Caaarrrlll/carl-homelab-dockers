@@ -1,7 +1,17 @@
 #!/command/with-contenv bash
 # s6 longrun, started after init-fluxer-aio (see dependencies.d).
-set -e
 # NATS with JetStream; config written by fluxer-aio-init.
+
+set -e
+
+# --- Log prefix ----------------------------------------------------------------
+# Prefix every output line with the service name in the container log.
 exec > >(exec sed -u "s/^/[nats] /") 2>&1
+
+# --- Environment ---------------------------------------------------------------
 export GOMEMLIMIT="${FLUXER_NATS_GOMEMLIMIT:-200MiB}"
-exec s6-setuidgid fluxer nats-server -c /run/fluxer-aio/nats.conf
+
+# --- Start ---------------------------------------------------------------------
+exec s6-setuidgid fluxer \
+    nats-server \
+    -c /run/fluxer-aio/nats.conf

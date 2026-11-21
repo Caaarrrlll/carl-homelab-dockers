@@ -5,52 +5,102 @@
 # the first start on Unraid.
 
 set -euo pipefail
-status=0
-say() { echo "[selftest] $*"; }
 
-check_ldd() { # check_ldd <file>: every shared library must resolve
-	local out
-	if ! out="$(ldd "$1" 2>&1)"; then
-		# "not a dynamic executable" = static binary, which is fine
-		case "$out" in *"not a dynamic executable"*) say "static: $1"; return 0 ;; esac
-		say "FAIL ldd $1: $out"; status=1; return 0
-	fi
-	if grep -q 'not found' <<<"$out"; then
-		say "FAIL missing libraries for $1:"; grep 'not found' <<<"$out" | sed 's/^/    /'
-		status=1
-	fi
+status=0
+
+# --- Helpers -------------------------------------------------------------------
+
+say() {
+    echo "[selftest] $*"
 }
 
+# check_ldd <file>: every shared library must resolve.
+check_ldd() {
+    local out
+
+    if ! out="$(ldd "$1" 2>&1)"; then
+        # "not a dynamic executable" = static binary, which is fine.
+        case "$out" in
+            *"not a dynamic executable"*)
+                say "static: $1"
+                return 0
+                ;;
+        esac
+        say "FAIL ldd $1: $out"
+        status=1
+        return 0
+    fi
+
+    if grep -q 'not found' <<<"$out"; then
+        say "FAIL missing libraries for $1:"
+        grep 'not found' <<<"$out" \
+            | sed 's/^/    /'
+        status=1
+    fi
+}
+
+# --- Binaries ------------------------------------------------------------------
+
 say "binaries"
-for f in /usr/local/bin/node /usr/local/bin/fluxer-media-proxy /usr/local/bin/fluxer-server \
-	/usr/local/bin/meilisearch /usr/local/bin/nats-server /usr/local/bin/livekit-server \
-	/usr/local/bin/caddy; do
-	[ -x "$f" ] || { say "FAIL not executable: $f"; status=1; continue; }
-	check_ldd "$f"
+for f in \
+    /usr/local/bin/node \
+    /usr/local/bin/fluxer-media-proxy \
+    /usr/local/bin/fluxer-server \
+    /usr/local/bin/meilisearch \
+    /usr/local/bin/nats-server \
+    /usr/local/bin/livekit-server \
+    /usr/local/bin/caddy
+do
+    if [ ! -x "$f" ]; then
+        say "FAIL not executable: $f"
+        status=1
+        continue
+    fi
+    check_ldd "$f"
 done
 
-say "gateway release (ERTS + NIFs)"
-while IFS= read -r f; do check_ldd "$f"; done < <(
-	find /opt/fluxer_gateway -type f \( -name 'beam.smp' -o -name '*.so' \) )
+# --- Gateway release -----------------------------------------------------------
 
-say "node native modules"
+say "gateway release (ERTS + NIFs)"
+while IFS= read -r f; do
+    check_ldd "$f"
+done < <(
+    find /opt/fluxer_gateway \
+        -type f \
+        \( -name 'beam.smp' -o -name '*.so' \)
+)
+
+# --- Node native modules -------------------------------------------------------
 # Packages such as argon2 ship prebuilds for every platform (prebuilds/<os-arch>/,
 # glibc and musl). Node loads only the linux-x64 glibc one here, so the others
 # are skipped; a package without a usable linux-x64 glibc build would fail at
 # run time, so at least one checked module is required.
+
+say "node native modules"
 n=0
 while IFS= read -r f; do
-	case "$f" in
-		*/prebuilds/linux-x64/*musl*) continue ;;
-		*/prebuilds/linux-x64/*) ;;
-		*/prebuilds/*) continue ;;
-	esac
-	check_ldd "$f"
-	say "checked: ${f#/usr/src/app/}"
-	n=$((n + 1))
+    case "$f" in
+        */prebuilds/linux-x64/*musl*)
+            continue
+            ;;
+        */prebuilds/linux-x64/*)
+            ;;
+        */prebuilds/*)
+            continue
+            ;;
+    esac
+    check_ldd "$f"
+    say "checked: ${f#/usr/src/app/}"
+    n=$((n + 1))
 done < <(find /usr/src/app -type f -name '*.node')
+
 say "checked $n native modules for linux-x64 glibc"
-[ "$n" -gt 0 ] || { say "FAIL no linux-x64 glibc native modules found (layout changed?)"; status=1; }
+if [ "$n" -eq 0 ]; then
+    say "FAIL no linux-x64 glibc native modules found (layout changed?)"
+    status=1
+fi
+
+# --- Versions ------------------------------------------------------------------
 
 say "versions"
 node --version
@@ -59,14 +109,30 @@ meilisearch --version
 livekit-server --version
 caddy version
 
+# --- Router config -------------------------------------------------------------
+
 say "router config"
-caddy validate --config /etc/fluxer-aio/Caddyfile --adapter caddyfile
+caddy validate \
+    --config /etc/fluxer-aio/Caddyfile \
+    --adapter caddyfile
+
+# --- Generated env files -------------------------------------------------------
 
 say "generated env files"
 for s in api gateway media-proxy rust; do
-	FLUXER_DOMAIN=selftest.example /usr/local/bin/fluxer-aio-env "$s" /usr/bin/env >/dev/null ||
-		{ say "FAIL fluxer-aio-env $s"; status=1; }
+    if ! FLUXER_DOMAIN=selftest.example \
+        /usr/local/bin/fluxer-aio-env "$s" /usr/bin/env >/dev/null
+    then
+        say "FAIL fluxer-aio-env $s"
+        status=1
+    fi
 done
 
-[ "$status" -eq 0 ] && say "all checks passed" || say "FAILED"
+# --- Result --------------------------------------------------------------------
+
+if [ "$status" -eq 0 ]; then
+    say "all checks passed"
+else
+    say "FAILED"
+fi
 exit "$status"

@@ -47,9 +47,16 @@ working with Claude Code in this repo.
   This includes the tracker and history files. Grep the diff before commits.
 - Python is available as `python` for XML checks, e.g.
   `python -c "import xml.etree.ElementTree as E; E.parse('templates/asa-wine.xml')"`.
-- `core.autocrlf` is `false` and there is no `.gitattributes`: keep `*.sh`
-  files **LF-only** (they run inside Linux containers). Check with
-  `file <script>` if an edit tool may have introduced CRLF.
+- `core.autocrlf` is `false`; line endings come from `.gitattributes`:
+  `*.sh`, Dockerfiles and `images/apps/fluxer-aio/rootfs/**` are LF, `.bat` /
+  `.ps1` are CRLF in the working tree (all stored as LF in git, so
+  `git diff --check` passes). Check with `git ls-files --eol <file>` or
+  `file <script>` if an edit tool may have changed them.
+- **Code style (maintainer's global standard):** scripts and Dockerfiles are
+  pretty-printed: one statement per line, if/else over `&&`/`||` chains,
+  4-space indent, long commands split one argument per line, commented
+  sections, sorted one-per-line package lists, `&&` leading continuation
+  lines in Dockerfiles.
 
 ## Guardrails (summary of the rules that are easiest to break)
 

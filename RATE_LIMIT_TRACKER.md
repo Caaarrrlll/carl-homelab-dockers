@@ -11,6 +11,66 @@ Legend: `[ ]` pending · `[•]` in progress (list the files it touches) · `[�
 done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintainer
 (live Unraid action or decision).
 
+## Active task — reformat Dockerfiles and scripts to the readability standard (2026-11-21)
+
+Maintainer request: reformat every Dockerfile, `.sh`, `.bat`, `.ps1` (and the
+extension-less fluxer-aio shell scripts / s6 `run` files) to their global
+code-style standard: one statement per line, if/else instead of `&&`/`||`
+chains where clearer, 4-space indent (repo currently mixes tabs/spaces, so
+normalised to 4 spaces), long commands split one argument per line, commented
+sections, Dockerfile package lists one per line and sorted, `&&` at the start
+of continuation lines, LF for sh/Dockerfiles, CRLF for bat/ps1.
+Scope rule (maintainer, 2026-11-21, also in their global CLAUDE.md): only
+files we author ourselves; never vendored/upstream/extracted/generated or
+re-downloadable files (e.g. fluxer-aio `upstream/env/*.env`, anything copied
+out of Fluxer's images). Checked: every fluxer-aio file reformatted here was
+written in this repo (commit b144c4a); `upstream/` untouched.
+Rule: **behaviour must not change** (formatting and provably equivalent
+rewrites only; ASA scripts run the live cluster).
+
+- [✓] 1. Line endings: `.gitattributes` (sh/Dockerfile LF, bat/ps1 CRLF in the
+  working tree, LF in git, so `git diff --check` keeps passing); docs note
+  (CLAUDE.md "no .gitattributes" line, AGENTS/README root files)
+  - Done 2026-11-21: renormalize changed nothing (all LF already); `.bat`
+    gets CRLF when rewritten in step 4. CLAUDE.md also notes the code style.
+- [✓] 2. Dockerfiles (debian, wine, fedora, asa, fluxer-aio) + an equivalence
+  checker (instruction-by-instruction token comparison, package lists
+  order-insensitive)
+  - Done 2026-11-21: all 5 EQUIVALENT per the checker (scratchpad
+    dfcheck.py; a tampered copy is caught); LF; fluxer-aio's ARG lines and
+    release header kept for bump-release.py (10 ARGs + header found).
+- [✓] 3. fluxer-aio scripts (`fluxer-aio-{env,init,healthcheck,selftest}`,
+  8 s6 `run` files); `bash -n`; re-run the existing stubbed simulations
+  - Done 2026-11-21 (simulated on Windows Git Bash, not in a container):
+    init: old vs new transcript IDENTICAL over 8 scenarios; env: exported
+    env byte-identical for all 5 services + both error paths; healthcheck:
+    identical over 4 scenarios; run files: same statements (only multi-var
+    `export` split, gateway `ulimit || echo` -> if). selftest: syntax only,
+    real test = CI build (it runs inside the image build).
+- [✓] 4. `scripts/` (`unraid-readonly.sh`, `docker-updater.sh`/`.bat`); re-run
+  the read-only allowlist simulation
+  - Done 2026-11-21: unraid-readonly.sh old vs new IDENTICAL over 33 cases
+    (output, exit code, syslog audit; inspect template char-for-char).
+    docker-updater.sh identical over 4 fake-docker scenarios.
+    docker-updater.bat: the OLD file (LF) never worked in cmd.exe ("cannot
+    find the batch label specified - buildpush" at the first call); the new
+    CRLF file builds/pushes in order, honours BUILD_FEDORA, stops on the
+    first failure (tested with a fake docker.exe). Only intended behaviour
+    change of this task.
+- [✓] 5. ASA scripts (`start.sh`, `start-server.sh`, `start-watchdog.sh`)
+  - Done 2026-11-21 (simulated on Windows Git Bash with stubs, not on
+    Unraid): start.sh old vs new IDENTICAL over 5 stop-handler scenarios
+    (save ok / SaveWorld fails / no server / ignores DoExit / failing user
+    script) + RCON_PORT fallback, with real SIGTERM; start-server.sh
+    IDENTICAL over 6 scenarios incl. every Wine launch argument; watchdog
+    same statements. Original quoting kept (unquoted vars stay unquoted).
+- [✓] 6. audit.md rows (each image), HISTORY note
+- [⏳] 7. Maintainer: commit with a CI rebuild (verifies all Dockerfiles,
+  publishes new images incl. ASA) or `[skip ci]` (images unchanged until the
+  next real change)
+- [ ] 8. [⏳] Optional: redeploy the reformatted `unraid-readonly.sh` to Unraid
+  (same behaviour; only needed to keep the copy identical)
+
 ## Active task — build `caaarrrlll/fluxer-aio` (2026-11-18)
 
 **Status 2026-11-20:** steps 1-9 done; fluxer-aio runs healthy; release

@@ -1,0 +1,15 @@
+# Line endings (maintainer's code-style standard, 2026-11-21).
+# Stored as LF in git; checked out as below. Because git stores LF, the
+# CRLF in .bat/.ps1 working copies never trips `git diff --check`.
+
+# Run inside Linux containers / on Unraid: always LF
+*.sh                text eol=lf
+Dockerfile          text eol=lf
+Dockerfile.*        text eol=lf
+*.dockerfile        text eol=lf
+images/apps/fluxer-aio/rootfs/**    text eol=lf
+
+# Windows scripts: CRLF in the working tree
+*.bat               text eol=crlf
+*.cmd               text eol=crlf
+*.ps1               text eol=crlf

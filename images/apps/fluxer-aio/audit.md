@@ -9,7 +9,7 @@
 | Base image | `caaarrrlll/debian-slim-baseimage:trixie-latest` |
 | Build context | `images/apps/fluxer-aio/` |
 | Upstream | Fluxer `fluxer-release@2026.1118.90548` compose bundle (`upstream/RELEASE`) |
-| Last audited | 2026-11-20 |
+| Last audited | 2026-11-21 |
 
 ## Current snapshot
 
@@ -69,6 +69,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
+| 2026-11-21 | _(this change)_ | Code-style reformat | Dockerfile, `fluxer-aio-*` scripts and s6 `run` files reformatted to the code-style standard (only files written in this repo; `upstream/` untouched). No behaviour change: Dockerfile equivalence check; init/env/healthcheck old vs new identical in stubbed simulations; run files same statements. Simulated, not tested in a container. |
 | 2026-11-20 | `782aa6b` | Release watch: `upstream/bump-release.py` + `.github/workflows/fluxer-release-watch.yml` | Weekly/manual; bumps to the newest compose bundle (found via docs.fluxer.com/compose/latest), test-builds, opens a PR. Tested on a scratch copy against bundle 2026.1118.162713 (5 image digests, env unchanged) and the up-to-date path. |
 | 2026-11-20 | `ee404f9` | Health check: s6 `/command` on PATH; report every failing probe | Docker showed `unhealthy` while all services worked: `docker exec`/HEALTHCHECK lack s6's `/command`, so `with-contenv` failed (`unable to exec ifelse`) in the media-proxy/fluxer-server probes. Confirmed on Unraid: the old script with that PATH passed in reports `healthy`. |
 | 2026-11-18 | `63a3295` | Self-test: check only linux-x64 glibc node prebuilds | First CI build (run 44372472991) failed only on argon2's musl prebuild, which Node never loads on glibc. All binaries, versions, Caddyfile and env checks passed. |

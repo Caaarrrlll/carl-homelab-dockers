@@ -59,6 +59,8 @@ Supporting files:
   adds only Claude-specific notes (local environment, guardrail summary).
   Keep project rules here, not there.
 - `dockers.code-workspace` — VS Code multi-root workspace definition.
+- `.gitattributes` — line endings: LF for `*.sh`, Dockerfiles and
+  fluxer-aio's `rootfs/`, CRLF for `.bat`/`.ps1` working copies (stored LF).
 - `.serena/` — project config for the [Serena](https://github.com/oraios/serena)
   code-navigation tool used by coding agents (`project.yml`, bash language
   server). Its own `.gitignore` keeps `cache/` and `project.local.yml`

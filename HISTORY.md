@@ -7,6 +7,27 @@ long-running upgrade finishes, its tracking document is moved under
 `docs/history/2026-11-07-ntsync-wine11.md`) so entries sort chronologically,
 and referenced from this file.
 
+## 2026-11-21 — Code-style reformat of our scripts and Dockerfiles
+
+- **Why:** the maintainer adopted a global readability standard for shell,
+  batch, PowerShell and Dockerfiles (one statement per line, `if` blocks
+  instead of `&&`/`||` shortcuts, 4-space indent, split long lines,
+  commented sections, sorted one-per-line package lists). It applies only to
+  files we author; upstream, vendored or generated files (e.g. fluxer-aio's
+  `upstream/env/`) are left alone.
+- **What:** all 5 Dockerfiles, the ASA scripts, fluxer-aio's own scripts and
+  s6 `run` files, and `scripts/`. A new `.gitattributes` fixes line endings
+  (LF for shell/Dockerfiles, CRLF for `.bat`/`.ps1` working copies).
+- **Behaviour unchanged**, checked per file: Dockerfiles compared instruction
+  by instruction; scripts run old vs new in stubbed simulations with
+  identical transcripts (incl. the ASA stop handler under a real SIGTERM and
+  every Wine launch argument).
+- **One fix as a side effect:** `scripts/docker-updater.bat` had LF line
+  endings, which made `cmd.exe` fail at its first `call :buildpush` ("cannot
+  find the batch label"), so it never worked. With CRLF it now builds and
+  pushes in order. (The updater scripts are still due for removal under
+  ROADMAP item 16.)
+
 ## 2026-11-20 — Repo scope after fluxer-aio, CI direction
 
 - **Scope confirmed.** Game servers stay the repo's main focus; self-hosted

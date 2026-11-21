@@ -3,9 +3,10 @@
 #
 # Lets an agent (Claude Code on the maintainer's PC) read container state and
 # logs on Unraid while an image is being built, without a shell. Installed as
-# the `command=` of ONE key line in root's authorized_keys, e.g.:
+# the `command=` of ONE key line in root's authorized_keys (all on one line):
 #
-#   restrict,command="/bin/bash /boot/config/claude-readonly/unraid-readonly.sh" ssh-ed25519 AAAA... claude-readonly@pc
+#   restrict,command="/bin/bash /boot/config/claude-readonly/unraid-readonly.sh"
+#       ssh-ed25519 AAAA... claude-readonly@pc
 #
 # sshd then runs this script for every connection with that key and puts what
 # the client asked for in SSH_ORIGINAL_COMMAND. The request is split into
@@ -27,7 +28,8 @@
 
 set -u -o pipefail
 
-# Fixed values. Do not read these from the environment.
+# --- Fixed values (never read from the environment) -----------------------------
+
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 readonly ALLOWED_CONTAINERS="fluxer-aio Caddy Redis"
 readonly APPDATA_ROOT=/mnt/user/appdata/fluxer-aio
@@ -37,7 +39,14 @@ readonly MAX_LINES=2000
 readonly DEFAULT_LINES=200
 readonly TAG=claude-readonly
 
-audit() { logger -t "$TAG" -- "$*" 2>/dev/null || true; }
+# --- Helpers -----------------------------------------------------------------------
+
+# Log to syslog; a missing logger never blocks a request.
+audit() {
+    if ! logger -t "$TAG" -- "$*" 2>/dev/null; then
+        :
+    fi
+}
 
 refuse() {
     echo "refused: $1" >&2
@@ -45,18 +54,60 @@ refuse() {
     exit 1
 }
 
+# Print the "Allowed requests" block from this file's header.
 usage() {
-    sed -n '/^# Allowed requests:/,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '/^# Allowed requests:/,/^$/p' "$0" \
+        | sed 's/^# \{0,1\}//'
     echo "Allowed containers: $ALLOWED_CONTAINERS"
 }
 
 allowed_container() {
     local c
     for c in $ALLOWED_CONTAINERS; do
-        [ "$1" = "$c" ] && return 0
+        if [ "$1" = "$c" ]; then
+            return 0
+        fi
     done
     return 1
 }
+
+# Go template for `inspect`: explicit fields only, .Config.Env is never
+# printed. Built from short pieces; the result is one line per field.
+inspect_format() {
+    local status_line
+    local health_line
+    local network_line
+    local ports_line
+    local parts
+
+    status_line='status:    {{.State.Status}} (started {{.State.StartedAt}},'
+    status_line+=' exit {{.State.ExitCode}}, restarts {{.RestartCount}},'
+    status_line+=' oom {{.State.OOMKilled}})'
+
+    health_line='health:    {{with index .State "Health"}}{{.Status}}'
+    health_line+=' (failing streak {{.FailingStreak}}){{else}}no healthcheck{{end}}'
+
+    network_line='network:   {{.HostConfig.NetworkMode}}'
+    network_line+='{{range $k, $v := .NetworkSettings.Networks}} [{{$k}} {{$v.IPAddress}}]{{end}}'
+
+    ports_line='ports:     {{range $p, $b := .NetworkSettings.Ports}}{{$p}}{{if $b}}->'
+    ports_line+='{{range $b}}{{.HostIp}}:{{.HostPort}} {{end}}{{end}}; {{end}}'
+
+    parts=(
+        'name:      {{.Name}}'
+        'image:     {{.Config.Image}}'
+        "$status_line"
+        "$health_line"
+        "$network_line"
+        "$ports_line"
+        'mounts:    {{range .Mounts}}'
+        '  {{.Source}} -> {{.Destination}} ({{if .RW}}rw{{else}}ro{{end}}){{end}}'
+        'memory:    {{.HostConfig.Memory}} bytes limit (0 = none)'
+    )
+    printf '\n%s' "${parts[@]}"
+}
+
+# --- Read and screen the request -------------------------------------------------
 
 req="${SSH_ORIGINAL_COMMAND:-}"
 if [ -z "$req" ]; then
@@ -68,7 +119,9 @@ fi
 # Only plain words: letters, digits and . _ / - : and spaces. This rejects
 # quotes, $, ;, |, &, `, globs, redirects and newlines before anything else.
 case "$req" in
-    *[!A-Za-z0-9._/:\ -]*) refuse "unexpected characters" ;;
+    *[!A-Za-z0-9._/:\ -]*)
+        refuse "unexpected characters"
+        ;;
 esac
 
 read -r -a args <<< "$req"
@@ -77,75 +130,124 @@ n=${#args[@]}
 
 audit "request: $req"
 
+# --- Run an allowed request ------------------------------------------------------
+
 case "$cmd" in
     help)
-        [ "$n" -eq 1 ] || refuse "help takes no arguments"
+        if [ "$n" -ne 1 ]; then
+            refuse "help takes no arguments"
+        fi
         usage
         ;;
+
     ps)
-        [ "$n" -eq 1 ] || refuse "ps takes no arguments"
-        docker ps -a --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+        if [ "$n" -ne 1 ]; then
+            refuse "ps takes no arguments"
+        fi
+        docker ps -a \
+            --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
         ;;
+
     logs)
-        [ "$n" -ge 2 ] && [ "$n" -le 3 ] || refuse "usage: logs <container> [lines]"
-        allowed_container "${args[1]}" || refuse "container not allowed: ${args[1]}"
+        if [ "$n" -lt 2 ] || [ "$n" -gt 3 ]; then
+            refuse "usage: logs <container> [lines]"
+        fi
+        if ! allowed_container "${args[1]}"; then
+            refuse "container not allowed: ${args[1]}"
+        fi
+
         lines="${args[2]:-$DEFAULT_LINES}"
         case "$lines" in
-            ''|*[!0-9]*) refuse "lines must be a number" ;;
+            '' | *[!0-9]*)
+                refuse "lines must be a number"
+                ;;
         esac
-        [ "${#lines}" -le 4 ] && [ "$lines" -ge 1 ] && [ "$lines" -le "$MAX_LINES" ] \
-            || refuse "lines must be 1-$MAX_LINES"
+        if [ "${#lines}" -gt 4 ] || [ "$lines" -lt 1 ] || [ "$lines" -gt "$MAX_LINES" ]; then
+            refuse "lines must be 1-$MAX_LINES"
+        fi
+
         docker logs --timestamps --tail "$lines" "${args[1]}" 2>&1
         ;;
+
     inspect)
-        [ "$n" -eq 2 ] || refuse "usage: inspect <container>"
-        allowed_container "${args[1]}" || refuse "container not allowed: ${args[1]}"
-        # Explicit fields only; .Config.Env is deliberately never printed.
-        docker inspect --format '
-name:      {{.Name}}
-image:     {{.Config.Image}}
-status:    {{.State.Status}} (started {{.State.StartedAt}}, exit {{.State.ExitCode}}, restarts {{.RestartCount}}, oom {{.State.OOMKilled}})
-health:    {{with index .State "Health"}}{{.Status}} (failing streak {{.FailingStreak}}){{else}}no healthcheck{{end}}
-network:   {{.HostConfig.NetworkMode}}{{range $k, $v := .NetworkSettings.Networks}} [{{$k}} {{$v.IPAddress}}]{{end}}
-ports:     {{range $p, $b := .NetworkSettings.Ports}}{{$p}}{{if $b}}->{{range $b}}{{.HostIp}}:{{.HostPort}} {{end}}{{end}}; {{end}}
-mounts:    {{range .Mounts}}
-  {{.Source}} -> {{.Destination}} ({{if .RW}}rw{{else}}ro{{end}}){{end}}
-memory:    {{.HostConfig.Memory}} bytes limit (0 = none)' "${args[1]}"
+        if [ "$n" -ne 2 ]; then
+            refuse "usage: inspect <container>"
+        fi
+        if ! allowed_container "${args[1]}"; then
+            refuse "container not allowed: ${args[1]}"
+        fi
+        docker inspect --format "$(inspect_format)" "${args[1]}"
         ;;
+
     stats)
-        [ "$n" -eq 1 ] || refuse "stats takes no arguments"
+        if [ "$n" -ne 1 ]; then
+            refuse "stats takes no arguments"
+        fi
+
         running=()
         for c in $ALLOWED_CONTAINERS; do
-            if [ "$(docker inspect --format '{{.State.Running}}' "$c" 2>/dev/null)" = "true" ]; then
+            state="$(docker inspect --format '{{.State.Running}}' "$c" 2>/dev/null)"
+            if [ "$state" = "true" ]; then
                 running+=("$c")
             fi
         done
-        [ "${#running[@]}" -gt 0 ] || { echo "none of the allowed containers is running"; exit 0; }
-        docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}' "${running[@]}"
+        if [ "${#running[@]}" -eq 0 ]; then
+            echo "none of the allowed containers is running"
+            exit 0
+        fi
+
+        docker stats --no-stream \
+            --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}' \
+            "${running[@]}"
         ;;
+
     ls)
-        [ "$n" -le 2 ] || refuse "usage: ls [subpath]"
+        if [ "$n" -gt 2 ]; then
+            refuse "usage: ls [subpath]"
+        fi
+
         sub="${args[1]:-}"
         case "/$sub/" in
-            */../*|*/./*) refuse "path may not contain . or .. segments" ;;
+            */../* | */./*)
+                refuse "path may not contain . or .. segments"
+                ;;
         esac
+
         target="$APPDATA_ROOT${sub:+/$sub}"
-        real="$(realpath -m -- "$target")" || refuse "bad path"
+        if ! real="$(realpath -m -- "$target")"; then
+            refuse "bad path"
+        fi
         case "$real/" in
-            "$APPDATA_ROOT"/*) ;;
-            *) refuse "path outside $APPDATA_ROOT" ;;
+            "$APPDATA_ROOT"/*)
+                ;;
+            *)
+                refuse "path outside $APPDATA_ROOT"
+                ;;
         esac
-        [ -d "$real" ] || refuse "not a directory: ${sub:-.}"
+        if [ ! -d "$real" ]; then
+            refuse "not a directory: ${sub:-.}"
+        fi
+
         ls -la -- "$real"
         ;;
+
     health)
-        [ "$n" -eq 1 ] || refuse "health takes no arguments"
+        if [ "$n" -ne 1 ]; then
+            refuse "health takes no arguments"
+        fi
+
         hp="$(docker port "$HEALTH_CONTAINER" "$HEALTH_PORT" 2>/dev/null | sed -n '1s/.*://p')"
         case "$hp" in
-            ''|*[!0-9]*) echo "$HEALTH_CONTAINER: port $HEALTH_PORT is not published (container missing or stopped?)"; exit 1 ;;
+            '' | *[!0-9]*)
+                echo "$HEALTH_CONTAINER: port $HEALTH_PORT is not published" \
+                    "(container missing or stopped?)"
+                exit 1
+                ;;
         esac
+
         curl -sS -m 5 -o - -w '\nHTTP %{http_code}\n' "http://127.0.0.1:$hp/_health"
         ;;
+
     *)
         refuse "unknown command: $cmd"
         ;;
