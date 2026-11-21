@@ -262,6 +262,14 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
   workspace JSON parses, redaction grep clean.
 - [ ] 10. Revoke the SSH key (maintainer), revert CLAUDE.md access note, close
   (NOT yet: maintainer wants the key kept for now, 2026-11-20)
+- [⏳] 11. Backups path (2026-11-21, on hold a few days per maintainer):
+  maintainer copies the old `<data path>/backups/.` to the new Backups host
+  path, applies the template, restarts; then check the start log for
+  `all verified backups passed their checksum check` (read-only `logs`)
+- [⏳] 12. Decision (on hold a few days): nightly backups count toward KEEP=3,
+  so the pre-update backup is pruned after three nights. Keep as is, or
+  always keep the newest pre-update (`*-to-*`) backup on top of KEEP=3
+  (image change to `fluxer-aio-backup` prune)
 
 Previous (2026-11-18): Fluxer / Stoat research
 (see `RATE_LIMIT_TRACKER_HISTORY.md`).
