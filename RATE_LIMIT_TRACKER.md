@@ -105,6 +105,12 @@ rewrites only; ASA scripts run the live cluster).
 watch live (PR #1 open). Open: step 10 (revoke the SSH key: NOT yet,
 maintainer's call). ROADMAP item 16 (CI redesign) must keep the release
 watch working (it relies on a push to main rebuilding fluxer-aio).
+**2026-11-21:** maintainer reports the shared-Postgres conversion done.
+Verified on Unraid via read-only access: fluxer-aio restarted 10:50 UTC,
+`healthy`, both Rust DB pools "connected to Postgres" (database `fluxer`);
+only start-up `Connection refused` errors 0.5 s after start (NATS not up yet,
+retried). Next: ROADMAP item 17 (needs the new server's Postgres major
+version for its `pg_dump` client), then merge PR #1.
 **On hold 2026-11-20:** the maintainer is doing the shared-Postgres conversion
 (separate project) first, then returns for ROADMAP item 17 (backup -> upgrade
 -> verify -> clean up) before merging PR #1. After the conversion: check the
