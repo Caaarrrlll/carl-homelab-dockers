@@ -132,9 +132,36 @@ Starting point for the planning session:
 7. **Guards:** a lock file so two runs can't overlap; abort and notify on any
    failure instead of retrying; never run during a pending manual action.
 
+**Planning notes (2026-11-21):**
+
+- **No image change is needed** for the basic flow; it is one host-side
+  script using what the image already has:
+
+  | Step | How | Change |
+  |---|---|---|
+  | Detect | `docker exec` into one running container, run its SteamCMD (`+login anonymous +app_info_update 1 +app_info_print 2430930`), read the public `buildid`; compare with `buildid` in `serverfiles/steamapps/appmanifest_2430930.acf`. Reads app info only, touches no server files. | Host script |
+  | Warn | `docker exec <c> rcon ... "ServerChat ..."` in every container (`rcon` and the admin password are already inside). | Host script |
+  | Wait, stop all | Grace period, then `docker stop -t 60` each; the existing stop handler saves. | None |
+  | Update one | Start one container; it already runs SteamCMD on every start. | None |
+  | Start the rest | One at a time, each after the previous one's log shows it is up (they run SteamCMD too, with nothing left to update). | Host script |
+
+- **Repo changes when implemented:** a new `scripts/asa-update.sh` (name
+  open), plus the same sequence as manual steps in the ASA README and
+  `docs/operations.md`. No Dockerfile or `start-server.sh` change.
+- **Optional image changes** to decide in planning: an RCON broadcast helper
+  inside the image (so the host script never handles the admin password);
+  `UPDATE_ON_START=false` for non-primary servers (item 1, point 5).
+- **Watchdog interplay:** independent. `docker stop` ends the whole
+  container, including an in-container watchdog, so it can't restart a server
+  the update script is stopping. The script only skips containers that are
+  already stopped or restarting.
+- **Detection catch:** SteamCMD can print stale cached app info; force a
+  refresh (`app_info_update 1`, or clear `appcache/`) before trusting the
+  build ID.
+
 Open questions: how to tell "server is up" reliably from the log; whether
 non-primary containers should skip SteamCMD (item 1, point 5); schedule vs
-manual trigger.
+manual trigger; the grace period and reminder times as settings.
 
 ## Future / research
 
