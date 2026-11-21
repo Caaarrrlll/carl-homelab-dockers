@@ -93,9 +93,14 @@ Directly relevant to housekeeping item 6: while this is parked, an idle crash
 needs a manual restart.
 
 ### 18. Coordinated game update for all ASA servers (explore)
-**Status: 🔭 EXPLORE (added 2026-11-21, maintainer idea).** Plan together
-with item 1: the watchdog never updates, so this is the deliberate update
-path that makes that safe. No code before a planning session.
+**Status: 🔭 PLANNING ONLY (added 2026-11-21, maintainer idea). Do not
+implement yet** (maintainer, 2026-11-21). Plan together with item 1: the
+watchdog never updates, so this is the deliberate update path that makes
+that safe.
+
+**Intended behaviour (maintainer, 2026-11-21):** when an update is detected,
+warn players on **all** servers; after a grace period (**15 minutes** for
+now), shut **all** servers down; update **one**; then restart the rest.
 **Risk: 🟡 Medium** for detect-and-notify only; **🔴 High** once it stops
 and restarts servers by itself.
 
@@ -114,8 +119,10 @@ Starting point for the planning session:
    (`steamcmd +app_info_update 1 +app_info_print 2430930`, run inside one
    container) with `buildid` in the install's `appmanifest_2430930.acf`.
    Detection alone is safe and could start as a notification only.
-3. **Warn players:** RCON `ServerChat` / broadcast countdown in every
-   container (`docker exec <c> rcon ...`; RCON stays unmapped).
+3. **Warn players:** RCON `ServerChat` / broadcast in every container
+   (`docker exec <c> rcon ...`; RCON stays unmapped), then wait the grace
+   period (15 min for now, a setting), with reminders during it (e.g. at
+   15, 5 and 1 minute).
 4. **Stop all** ASA containers (`docker stop -t 60`; the stop handler saves
    each world). Never continue while any server is still running.
 5. **Update once:** start one "primary" container (or a one-off SteamCMD
