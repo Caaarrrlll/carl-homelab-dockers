@@ -33,13 +33,15 @@ PR #1 as its first real test.
     sha256): backup/retention/verify 35/35 PASS; init update section 15/15
     PASS (first start, same release, update, restart while unverified,
     backup failure = exit 1 + no config + release not pending, retry).
-- [•] 6. Docs: fluxer-aio README (backups, restore), docs/operations.md,
+- [✓] 6. Docs: fluxer-aio README (backups, restore), docs/operations.md,
   audit, HISTORY; CI build green
   - Docs done 2026-11-21 (README Backups + restore steps, operations.md
     sections 3/4c/5/7, template overview, audit, HISTORY; selftest checks
     pg_dump/pg_restore). Pushed without [skip ci]: CI builds fluxer-aio.
-- [ ] 7. [⏳] Live test on Unraid: merge PR #1, force update, confirm backup +
-  verify + prune in the log
+  - CI run 44897925649 GREEN (5b7582a): self-test passed, pg_dump 18.7 linked.
+- [⏳] 7. Live test on Unraid: (a) force update to 5b7582a = first start, no
+  backup, release recorded when healthy; (b) merge PR #1, force update =
+  backup + verify + prune in the log. Confirmed via read-only access.
 
 ## Active task — monthly scheduled rebuild (2026-11-21)
 
