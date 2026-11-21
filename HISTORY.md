@@ -70,7 +70,9 @@ and referenced from this file.
   idle crashes that prompted the item are fixed under Wine, and Proton's
   self-upgrading prefix conflicts with the shared install. Parked until a
   Wine-specific problem appears; see `docs/asa-proton-research.md`. Item 9
-  (`screen`/`xvfb`) unblocked; it shrinks the image but saves no RAM.
+  (`screen`/`xvfb`) unblocked and done the same day: both packages removed
+  from `asa-wine` (`7ce1b33`, `ae4af3c`), each tested on Unraid with no new
+  warnings. Smaller image only; no RAM change.
 
 ## 2026-11-20 — Repo scope after fluxer-aio, CI direction
 

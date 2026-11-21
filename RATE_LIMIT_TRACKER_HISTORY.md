@@ -9,6 +9,20 @@ move its checklist section here, newest first.
 
 ---
 
+## ROADMAP 9 part 2: remove `xvfb` from asa-wine (done 2026-11-21)
+
+`screen` already removed and tested (`7ce1b33`). If Wine display warnings
+appear after this, put `xvfb` back (or roll back with Retag `previous`).
+
+- [✓] 1. Remove `xvfb`: Dockerfile, audit.md, ROADMAP 9
+- [✓] 2. Commit + push (`ae4af3c`); CI run 44912413172 green, built
+  asa-wine only
+- [✓] 3. Maintainer tested on Unraid (2026-11-21): no new warnings, server
+  joinable, save on stop works
+- [✓] 4. Result recorded; ROADMAP 9 moved to ROADMAP_HISTORY.md
+
+---
+
 ## ROADMAP 9 part 1: remove `screen` from asa-wine (done 2026-11-21)
 
 Test removing `screen` only; `xvfb` is a later, separate test. First CI

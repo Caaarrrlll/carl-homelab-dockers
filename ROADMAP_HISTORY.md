@@ -10,6 +10,14 @@ roadmap. Item numbers are never reused.
 
 ---
 
+## 9. Unused packages removed from the ASA image (done 2026-11-21)
+
+`screen` (`7ce1b33`) and `xvfb` (`ae4af3c`) removed from `asa-wine`: no
+script used them. Each was tested on Unraid by the maintainer (no new
+warnings, server joinable, save on stop works). Gain is image size and build
+time only, no RAM. They were thought to silence log warnings; they didn't.
+`winbind` stays (Wine uses `ntlm_auth`).
+
 ## 16. CI driven by one list of images (done 2026-11-21)
 
 `.github/images.json` lists every image and its parent;

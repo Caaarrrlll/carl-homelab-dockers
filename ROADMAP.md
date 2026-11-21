@@ -94,25 +94,6 @@ needs a manual restart.
 
 ## Low priority
 
-### 9. Possibly unused packages in the ASA image
-**Status: 🟢 OPEN, low priority (unblocked 2026-11-21).** Item 14's research
-is done: a Proton image would be separate with its own package list, so this
-no longer waits for it. Gain is image size and build time only: unused
-packages use no RAM, so this does **not** lower server memory. Revisit later
-(maintainer, 2026-11-21). The maintainer believes `screen`/`xvfb` were added
-to silence warnings in the container log: when testing, compare the start-up
-log with and without them and keep them if warnings come back.
-**Order:** `screen` first (nothing calls it; it can't affect Wine), then
-`xvfb` as its own change. **`screen` removed** (`7ce1b33`, tested on Unraid
-2026-11-21: no new log errors, joinable, saves on stop). **`xvfb` removal**
-in test since 2026-11-21.
-**Risk: 🟡 Medium.** Removing a package Wine or SteamCMD quietly relies on
-would only show up at runtime.
-
-`screen` and `xvfb` are installed, but no script uses them. Test the server
-without them and remove them if nothing breaks (smaller image, faster
-`no-cache` builds). Keep `winbind` (Wine uses `ntlm_auth`).
-
 ## Future / research
 
 ### 14. Chore: Wine vs Proton / Proton-GE for the ASA server
@@ -154,9 +135,8 @@ can run without the Steam client, so it may be worth another look.
 
 0. **Test first:** done 2026-11-18 (housekeeping items 5 + 7 closed). Item 15
    (GameAnalytics log flood) done 2026-11-18, see `ROADMAP_HISTORY.md`.
-1. Item 9 (`screen`/`xvfb` removal test), low priority: smaller image only.
-2. ⏸️ Item 14 (Wine vs Proton) parked 2026-11-21 until its trigger; research
+1. ⏸️ Item 14 (Wine vs Proton) parked 2026-11-21 until its trigger; research
    in `docs/asa-proton-research.md`.
-3. ⏸️ Item 1 stays parked until a dedicated planning session.
+2. ⏸️ Item 1 stays parked until a dedicated planning session.
 
 Rollback for any of these: ASA README → "Rolling back to an earlier image".
