@@ -182,6 +182,13 @@ backups are never deleted automatically and never push a verified one out,
 and nothing is deleted at all while the newest backup is not verified, so
 the last good backup always survives until the problem is looked at.
 
+**Keeping backups elsewhere.** `/data/backups` can be mapped to its own
+host folder (template field **Backups**, e.g. a share your backup job copies
+off the server). Before mapping it on an existing install, copy the current
+`<data path>/backups` folder to the new location: once mapped, the old folder
+is hidden from the container. Backups are root-only (folders 0700, files
+0600), so the job copying them must run as root.
+
 **Manual backup, list, check** (Unraid terminal):
 
 ```bash

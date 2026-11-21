@@ -41,6 +41,7 @@ Every service logs to the container log with a [service] prefix. The health chec
 
   <!-- Storage -->
   <Config Name="Data" Target="/data" Default="/mnt/user/appdata/fluxer-aio" Mode="rw" Description="Generated secrets (secrets.env), uploaded files (objects/), search index, NATS state. Back this up." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/fluxer-aio</Config>
+  <Config Name="Backups" Target="/data/backups" Default="" Mode="rw" Description="Optional: where the automatic pre-update database backups go (e.g. a backup share, /mnt/user/&lt;backup-share&gt;/fluxer). Empty = inside the Data folder. Backups are root-only (0700/0600). Moving an existing setup: copy Data/backups to the new folder first, it is hidden once this is mapped." Type="Path" Display="always" Required="false" Mask="false"/>
 
   <!-- Required settings -->
   <Config Name="Domain" Target="FLUXER_DOMAIN" Default="" Mode="" Description="Public domain Fluxer runs on, served by your reverse proxy (e.g. chat.example.com)." Type="Variable" Display="always" Required="true" Mask="false"/>
