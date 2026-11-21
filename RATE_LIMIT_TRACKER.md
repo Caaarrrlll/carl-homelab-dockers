@@ -11,6 +11,20 @@ Legend: `[ ]` pending · `[•]` in progress (list the files it touches) · `[�
 done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintainer
 (live Unraid action or decision).
 
+## Active task — monthly scheduled rebuild (2026-11-21)
+
+Maintainer decision: rebuild **all** images monthly when Debian updates
+(debian -> wine -> asa + fluxer-aio; Fedora stays opt-in), since rollback is
+easy (`:previous`, date/sha tags, Retag workflow). Small piece of ROADMAP
+item 16; the list-driven redesign stays open there.
+
+- [✓] 1. Monthly `schedule` (cron `23 4 2 * *`) added to build-images.yml
+  - YAML parsed; `if:` conditions evaluated for event=schedule: debian,
+    wine, asa, fluxer-aio (each with keep-:previous) RUN, Fedora and change
+    detection skipped. AGENTS/README CI text, ROADMAP 16, HISTORY updated.
+- [✓] 2. Committed with `[skip ci]` (no immediate rebuild). First scheduled
+  run: 2026-12-02 04:23 UTC. Optional: a manual run (same path) to test now.
+
 ## Active task — reformat Dockerfiles and scripts to the readability standard (2026-11-21)
 
 Maintainer request: reformat every Dockerfile, `.sh`, `.bat`, `.ps1` (and the

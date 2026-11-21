@@ -31,6 +31,13 @@ and referenced from this file.
   task and the `DOCKERHUB_USER` docs/guardrails. Images are only built by
   GitHub Actions; if the repo ever leaves GitHub, port the CI instead of
   reviving local scripts.
+- **Monthly scheduled rebuild** of all images (2nd of the month, 04:23 UTC):
+  Debian ships point releases about every two months and security fixes
+  continuously, and the base image runs `apt-get upgrade` on every build, so
+  a monthly run keeps every image within about a month of Debian. The
+  maintainer chose to rebuild **everything** that follows Debian (Wine, ASA,
+  fluxer-aio), not only the base, because rollback is easy (`:previous`,
+  date/`sha-` tags, Retag workflow). Weekly was rejected as churn.
 
 ## 2026-11-20 — Repo scope after fluxer-aio, CI direction
 

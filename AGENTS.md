@@ -132,8 +132,11 @@ scripts. The Dockerfiles' `FROM` lines intentionally reference the
 maintainer's published images (`caaarrrlll/...`), so the dependency chain
 always builds on those public bases.
 
-CI (`Build and push images`) runs on pushes to `main`, `v*` tags, and manual
-dispatch. On a normal push it only rebuilds affected images and their
+CI (`Build and push images`) runs on pushes to `main`, `v*` tags, manual
+dispatch, and **monthly** (2nd of the month, 04:23 UTC: a scheduled full
+rebuild of debian → wine → asa + fluxer-aio, to pick up Debian point releases
+and security fixes; Fedora stays opt-in). GitHub pauses scheduled workflows
+in a repo with no activity for 60 days; re-enable it under Actions if so. On a normal push it only rebuilds affected images and their
 dependents: Debian changes trigger debian → wine → asa (+ fluxer-aio); Wine
 changes trigger wine → asa; fluxer-aio changes trigger fluxer-aio only; a change
 to the workflow file itself triggers debian → wine → asa + fluxer-aio. Tag and

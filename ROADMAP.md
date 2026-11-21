@@ -109,6 +109,8 @@ special input (`fluxer_only`). Maintainer's requirements (2026-11-20):
   fluxer-aio change rebuilds only fluxer-aio.
 - **Monthly** scheduled rebuild of the Debian base (and so everything on it),
   for upstream security fixes; no weekly schedule. Fedora stays opt-in.
+  **Done 2026-11-21** as a `schedule` on the current workflow (all images,
+  maintainer's choice); the redesign must keep it.
 - **Manual runs** name the images to build (dependents included), replacing
   `fluxer_only` / `build_fedora`.
 
@@ -219,8 +221,8 @@ can run without the Steam client, so it may be worth another look.
 
 0. **Test first:** done 2026-11-18 (housekeeping items 5 + 7 closed). Item 15
    (GameAnalytics log flood) done 2026-11-18, see `ROADMAP_HISTORY.md`.
-1. 📋 **Next:** item 16 (list-driven CI, monthly Debian rebuild), after the
-   fluxer-aio task closes. (The local build scripts are already gone.)
+1. 📋 **Next:** item 16 (list-driven CI), after the fluxer-aio task closes.
+   (The local build scripts are gone and the monthly rebuild is live.)
 2. 📋 **Before merging fluxer-aio's first release PR:** item 17 (backup ->
    upgrade -> verify -> clean up). The maintainer does the shared-Postgres
    conversion (separate project) first (2026-11-20); item 17 is not blocked

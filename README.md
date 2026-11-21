@@ -51,7 +51,8 @@ CI is `.github/workflows/build-images.yml`. On a push it rebuilds only
 the affected images, in dependency order: a Debian change rebuilds debian →
 wine → asa and fluxer-aio, a Wine change rebuilds wine → asa, a fluxer-aio
 change rebuilds fluxer-aio only, and a Fedora change rebuilds Fedora only. Tag
-pushes and manual dispatches rebuild debian → wine → asa and fluxer-aio; tick
+pushes, manual dispatches and a **monthly scheduled run** (2nd of each month,
+for Debian updates) rebuild debian → wine → asa and fluxer-aio; tick
 `fluxer_only` on a manual run to build just fluxer-aio. Fedora is excluded
 unless you tick `build_fedora` on a manual run. New Fluxer releases arrive as
 a pull request from the **Fluxer release watch** workflow (weekly, or Actions →
