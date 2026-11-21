@@ -36,6 +36,11 @@
 - Published ports: `8080/tcp` (HTTP), `7881/tcp` + `7882/udp` (LiveKit).
 - Updates: `fluxer-release-watch` workflow opens a PR per new bundle
   (`upstream/bump-release.py`); nothing is published until it is merged.
+- Pre-update backups (ROADMAP item 17): `/etc/fluxer-aio/RELEASE` vs
+  `/data/.fluxer-aio/last-good-release`; `fluxer-aio-backup` into
+  `/data/backups` (validated, SHA-256, `STATUS`), checked on every start,
+  3 verified kept; init fail-closed; `svc-update-verify` (10 min limit).
+  Backup client: `postgresql-client-18` (server must be <= 18).
 - Build-time `fluxer-aio-selftest`: `ldd` on every binary, gateway NIF and
   node native module; versions; `caddy validate`; env evaluation.
 - Labels: licenses `MIT AND AGPL-3.0-or-later`.
@@ -69,7 +74,8 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
-| 2026-11-21 | _(this change)_ | Code-style reformat | Dockerfile, `fluxer-aio-*` scripts and s6 `run` files reformatted to the code-style standard (only files written in this repo; `upstream/` untouched). No behaviour change: Dockerfile equivalence check; init/env/healthcheck old vs new identical in stubbed simulations; run files same statements. Simulated, not tested in a container. |
+| 2026-11-21 | _(this change)_ | Backup -> upgrade -> verify -> clean up (ROADMAP 17) | PostgreSQL 18 client (PGDG repo, key pinned by SHA-256); `fluxer-aio-backup` (pg_dump + secrets, validated by `pg_restore --list` and a full read, SHA-256, retention 3 verified, corrupt/failed never deleted, no pruning while the newest is not verified); init backs up before an update and exits (Fluxer not started) on failure; `svc-update-verify` records the release after the health check (10 min) and prunes. Simulated (50 checks), not built yet. |
+| 2026-11-21 | `a1df1be` | Code-style reformat | Dockerfile, `fluxer-aio-*` scripts and s6 `run` files reformatted to the code-style standard (only files written in this repo; `upstream/` untouched). No behaviour change: Dockerfile equivalence check; init/env/healthcheck old vs new identical in stubbed simulations; run files same statements. Simulated, not tested in a container. |
 | 2026-11-20 | `782aa6b` | Release watch: `upstream/bump-release.py` + `.github/workflows/fluxer-release-watch.yml` | Weekly/manual; bumps to the newest compose bundle (found via docs.fluxer.com/compose/latest), test-builds, opens a PR. Tested on a scratch copy against bundle 2026.1118.162713 (5 image digests, env unchanged) and the up-to-date path. |
 | 2026-11-20 | `ee404f9` | Health check: s6 `/command` on PATH; report every failing probe | Docker showed `unhealthy` while all services worked: `docker exec`/HEALTHCHECK lack s6's `/command`, so `with-contenv` failed (`unable to exec ifelse`) in the media-proxy/fluxer-server probes. Confirmed on Unraid: the old script with that PATH passed in reports `healthy`. |
 | 2026-11-18 | `63a3295` | Self-test: check only linux-x64 glibc node prebuilds | First CI build (run 44372472991) failed only on argon2's musl prebuild, which Node never loads on glibc. All binaries, versions, Caddyfile and env checks passed. |

@@ -86,9 +86,11 @@ Image-specific rules:
   containers first**, update them, then start them **one at a time**. Never
   update while a game update is pending. See the ASA README.
 - **fluxer-aio:** Fluxer migrates its database when a new **Fluxer release**
-  starts. Before updating to a new release, back up its Postgres database and
-  its data folder (fluxer-aio README, "Data"). After the update the container
-  should show **healthy** within about 3 minutes.
+  starts. The container backs up and validates the database **itself** before
+  that happens; if the backup fails, Fluxer does not start and the log says
+  why (fluxer-aio README, "Backups"). After the update the container should
+  show **healthy** within 10 minutes; only then is the release recorded as
+  good and old backups cleaned up.
 
 ## 4. Roll back to an earlier image
 
@@ -125,8 +127,8 @@ next push to its files, or the **monthly rebuild on the 2nd**), which moves
   fluxer-aio's database and files stay as they are.
 - **fluxer-aio across Fluxer releases:** if the newer release already
   migrated the database, an older image may not work with it. Restore the
-  database backup taken before the update (fluxer-aio README) together with
-  the older image.
+  backup the container took before the update (fluxer-aio README,
+  "Backups" → "Restore a backup") together with the older image.
 
 ## 5. Fluxer release updates
 
@@ -136,10 +138,12 @@ release watch** → **Run workflow**). Nothing changes until it is merged.
 
 1. Read the pull request: it lists the changed images and settings, and says
    whether its test build passed.
-2. Back up fluxer-aio's database and data folder.
+2. Nothing to back up by hand: the container backs up the database before
+   the new release starts (keep your usual appdata backups).
 3. **Merge** the pull request. This starts a fluxer-aio build (section 1).
 4. When the build is green, update the container (section 3).
-5. If it misbehaves: roll back (section 4) and restore the backup (4c).
+5. If it misbehaves: roll back (section 4) and restore the pre-update
+   backup (4c).
 
 ## 6. Set up an image on Unraid (first time)
 
@@ -162,6 +166,14 @@ own filled-in copies on your server.
 - **Health:** fluxer-aio shows *healthy* / *unhealthy* in the Docker tab; its
   log names the failing part.
 - **Builds:** GitHub → Actions → the run → the red step shows the error.
+- **fluxer-aio stops right after an update** with `pre-update backup
+  FAILED … Fluxer was NOT started`: the database could not be backed up
+  (Postgres down, wrong password, or a Postgres server newer than the
+  image's backup client). Fix the cause and restart, or roll back the image.
+  Nothing was migrated.
+- **`CORRUPT` warning about a backup** in the fluxer-aio log: a kept backup
+  changed on disk. It is kept and marked; check the disk, and take a new
+  backup (`docker exec fluxer-aio fluxer-aio-backup`).
 - **Monthly build not running:** GitHub pauses scheduled workflows in a
   repository with no activity for 60 days (it sends an email). Re-enable:
   Actions → **Build and push images** → **Enable workflow**.

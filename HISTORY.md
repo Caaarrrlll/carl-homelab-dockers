@@ -31,6 +31,16 @@ and referenced from this file.
   task and the `DOCKERHUB_USER` docs/guardrails. Images are only built by
   GitHub Actions; if the repo ever leaves GitHub, port the CI instead of
   reviving local scripts.
+- **fluxer-aio backs up its database before every Fluxer update** (ROADMAP
+  item 17). Motivation: Fluxer migrates its database on start and updates now
+  arrive regularly. Maintainer's rules: backups inside the fluxer-aio data
+  folder; a failed or invalid backup blocks start-up with a log message; keep
+  3; validate every backup (archive list + full read + SHA-256, re-checked on
+  every start); a corrupt backup must never cause a good one to be deleted,
+  and the last good one stays at least until the next successful update.
+  The release counts as good only after the health check passes (10 min).
+  The shared Postgres was converted to a plain Postgres 18 server the same
+  day; the image ships the matching 18 client.
 - **Operations guide for anyone** (`docs/operations.md`): setup, updates,
   manual rebuilds and rollback as plain steps in the GitHub/Unraid web UIs,
   linked from the README. Motivation: the maintainer can't know who (or which

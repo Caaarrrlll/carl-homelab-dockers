@@ -145,9 +145,76 @@ media-proxy `18085`, app-proxy `18086`, Rust services `18090`–`18094`, NATS
 | `meilisearch/` | Search index (rebuildable, but large). |
 | `nats/` | JetStream state. |
 | `caddy/`, `tmp/`, `home/` | Router state, upload spool, scratch. |
+| `backups/` | Database backups taken before each Fluxer update (see [Backups](#backups)). |
+| `.fluxer-aio/` | Update state: last release that started healthy, pending update. |
 
-The database itself lives in your Postgres: back it up there
-(`pg_dump fluxer`).
+The database itself lives in your Postgres. fluxer-aio backs it up before
+every Fluxer update (next section); keep your normal backups of Postgres and
+of this folder as well (uploads in `objects/` are not in those backups).
+
+## Backups
+
+**Automatic, before every Fluxer update.** When the container starts with a
+newer Fluxer release than the one that last ran healthy, it backs up the
+Fluxer database **before** Fluxer starts (and so before Fluxer migrates the
+database):
+
+1. `pg_dump` of the Fluxer database only, plus a copy of `secrets.env`, into
+   `backups/<UTC time>_<old release>-to-<new release>/`.
+2. **Validation:** the archive must list (`pg_restore --list`) and every data
+   block must read back (`pg_restore` into nothing). Then SHA-256 checksums
+   are saved and the backup is marked `verified` (file `STATUS`).
+3. **If the backup or its validation fails, Fluxer is not started.** The log
+   says why (`pre-update backup FAILED … Fluxer was NOT started`), the
+   failed attempt is kept as `<name>.failed`, and the database is untouched.
+   Fix the cause and restart, or roll back the image.
+4. The new release is recorded as good only after the container's health
+   check passes, within 10 minutes. Until then, restarts do not take a
+   second backup, and nothing is cleaned up.
+
+**Checked on every start.** The checksums of all kept backups are verified
+again; a backup that no longer matches is marked `corrupt` and logged as a
+warning. It is never deleted automatically.
+
+**Retention.** After a successful update, the newest **3 verified** backups
+are kept and older verified ones deleted. Corrupt, failed or unfinished
+backups are never deleted automatically and never push a verified one out,
+and nothing is deleted at all while the newest backup is not verified, so
+the last good backup always survives until the problem is looked at.
+
+**Manual backup, list, check** (Unraid terminal):
+
+```bash
+docker exec fluxer-aio fluxer-aio-backup            # back up now (label "manual")
+docker exec fluxer-aio fluxer-aio-backup list       # status of every backup
+docker exec fluxer-aio fluxer-aio-backup check      # re-check all checksums
+```
+
+**Postgres version.** The image's backup client is PostgreSQL **18**; it can
+back up Postgres 18 and older servers. Before upgrading your Postgres server
+to a newer major version, update fluxer-aio's client first (Dockerfile
+`PG_CLIENT_MAJOR`), or the next update's backup fails and blocks the start.
+
+**Restore a backup** (Unraid terminal; `<pg-container>` is your Postgres
+container, `<backup>` the backup folder, data path as in your template):
+
+1. Stop fluxer-aio (Unraid → Docker → stop).
+2. Check the backup: `cat <data path>/backups/<backup>/STATUS` must say
+   `verified`.
+3. Recreate the database and restore into it:
+
+   ```bash
+   docker exec <pg-container> dropdb -U postgres fluxer
+   docker exec <pg-container> createdb -U postgres -O fluxer fluxer
+   docker exec -i <pg-container> pg_restore -U postgres -d fluxer --no-owner --role=fluxer \
+       < <data path>/backups/<backup>/fluxer.dump
+   ```
+
+4. Put back the matching secrets:
+   `cp <data path>/backups/<backup>/secrets.env <data path>/secrets.env`
+5. If the backup was taken before an update, roll the image back to the
+   release it came from ([`docs/operations.md`](../../../docs/operations.md)
+   section 4), then start fluxer-aio and check it becomes healthy.
 
 ## Logs and health
 
@@ -183,8 +250,9 @@ By hand, the same bump is `python upstream/bump-release.py [--release <tag>]`
 guessing when the bundle changes in a way it doesn't understand (for example
 an internal address `gen-env.py` can't map).
 
-Fluxer database migrations run on start; back up Postgres and `/data`
-before updating.
+Fluxer migrates its database when a new release starts; the container takes
+and validates a database backup first ([Backups](#backups)) and does not
+start Fluxer if that fails.
 
 ## Limitations
 

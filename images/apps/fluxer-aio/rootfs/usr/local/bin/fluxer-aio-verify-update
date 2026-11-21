@@ -1,0 +1,69 @@
+#!/bin/bash
+# fluxer-aio-verify-update: run by the s6 service svc-update-verify.
+#
+# After a first start or an update (pending release != last good release),
+# waits until fluxer-aio-healthcheck passes, then records the release as
+# "last good" and prunes old backups. If the container is not healthy within
+# the time limit, nothing is recorded or pruned: the next start still treats
+# the release as an unverified update and every backup is kept.
+# Always ends by sleeping, so s6 does not restart it.
+
+set -uo pipefail
+
+DATA_DIR="${DATA_DIR:-/data}"
+STATE_DIR="$DATA_DIR/.fluxer-aio"
+LIMIT_SECONDS=600       # 10 minutes (maintainer, 2026-11-21)
+FIRST_WAIT_SECONDS=30
+POLL_SECONDS=15
+
+# --- Helpers -------------------------------------------------------------------
+
+log() {
+    echo "[update-verify] $*"
+}
+
+read_state() {
+    if [ -r "$STATE_DIR/$1" ]; then
+        cat "$STATE_DIR/$1"
+    fi
+}
+
+idle() {
+    exec sleep infinity
+}
+
+# --- Anything to verify? -------------------------------------------------------
+
+pending="$(read_state pending-release)"
+last_good="$(read_state last-good-release)"
+
+if [ -z "$pending" ] || [ "$pending" = "$last_good" ]; then
+    idle
+fi
+
+log "verifying $pending (limit $((LIMIT_SECONDS / 60)) min)"
+
+# --- Wait for the container to become healthy ---------------------------------
+
+sleep "$FIRST_WAIT_SECONDS"
+waited="$FIRST_WAIT_SECONDS"
+while ! /usr/local/bin/fluxer-aio-healthcheck >/dev/null 2>&1; do
+    if [ "$waited" -ge "$LIMIT_SECONDS" ]; then
+        log "ERROR: $pending did not become healthy within $((LIMIT_SECONDS / 60)) min."
+        log "ERROR: not recorded as good; all backups kept. Check the log above,"
+        log "ERROR: and roll back if needed (docs/operations.md section 4)."
+        idle
+    fi
+    sleep "$POLL_SECONDS"
+    waited=$((waited + POLL_SECONDS))
+done
+
+# --- Record and clean up ------------------------------------------------------
+
+printf '%s' "$pending" >"$STATE_DIR/last-good-release.tmp"
+mv "$STATE_DIR/last-good-release.tmp" "$STATE_DIR/last-good-release"
+rm -f "$STATE_DIR/pending-backup"
+log "$pending is healthy and recorded as the last good release"
+
+/usr/local/bin/fluxer-aio-backup prune
+idle

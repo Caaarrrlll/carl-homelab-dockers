@@ -1,0 +1,230 @@
+#!/bin/bash
+# fluxer-aio-backup: database backups for fluxer-aio (ROADMAP item 17).
+#
+#   fluxer-aio-backup [create] [label]   back up now (default label: manual)
+#   fluxer-aio-backup check              re-check every verified backup's SHA-256
+#   fluxer-aio-backup prune              apply the retention rules
+#   fluxer-aio-backup list               show every backup and its status
+#
+# A backup is a folder in /data/backups named <UTC time>_<label> with:
+#   fluxer.dump   pg_dump of the Fluxer database (custom format, compressed)
+#   secrets.env   copy of /data/secrets.env (the database is useless without it)
+#   SHA256SUMS    checksums of both files
+#   INFO          when, from where, which client
+#   STATUS        verified | corrupt | failed
+#
+# Validation before a backup is marked "verified": the archive must list
+# (pg_restore --list) AND every data block must read back (pg_restore into
+# /dev/null). Retention: keep the newest 3 VERIFIED backups; corrupt, failed or
+# unverified backups are never deleted and never push a verified one out, and
+# nothing is pruned while the newest backup is not verified.
+#
+# Run as root (backups contain secrets; folders are 0700, files 0600).
+# Manual use on Unraid: docker exec fluxer-aio fluxer-aio-backup
+
+set -uo pipefail
+umask 077
+
+DATA_DIR="${DATA_DIR:-/data}"
+BACKUP_ROOT="$DATA_DIR/backups"
+SECRETS="$DATA_DIR/secrets.env"
+KEEP=3
+PG_BIN="${PG_BIN:-/usr/lib/postgresql/18/bin}"
+
+# --- Helpers -------------------------------------------------------------------
+
+log() {
+    echo "[fluxer-aio-backup] $*" >&2
+}
+
+status_of() {
+    local dir="$1"
+    if [ -r "$dir/STATUS" ]; then
+        cat "$dir/STATUS"
+    else
+        echo "unverified"
+    fi
+}
+
+# Backup folders, oldest first (names start with a UTC time stamp).
+backup_dirs() {
+    local d
+    if [ ! -d "$BACKUP_ROOT" ]; then
+        return 0
+    fi
+    for d in "$BACKUP_ROOT"/*/; do
+        if [ -d "$d" ]; then
+            printf '%s\n' "${d%/}"
+        fi
+    done | sort
+}
+
+# Connection to the operator's Postgres, from the same settings Fluxer uses.
+set_pg_connection() {
+    if [ -n "${FLUXER_POSTGRES_URL:-}" ]; then
+        PG_CONN=(--dbname="$FLUXER_POSTGRES_URL")
+    else
+        export PGHOST="${FLUXER_POSTGRES_HOST:-}"
+        export PGPORT="${FLUXER_POSTGRES_PORT:-5432}"
+        export PGUSER="${FLUXER_POSTGRES_USERNAME:-fluxer}"
+        export PGDATABASE="${FLUXER_POSTGRES_DATABASE:-fluxer}"
+        export PGPASSWORD="${POSTGRES_PASSWORD:-}"
+        PG_CONN=()
+    fi
+    if [ "${FLUXER_POSTGRES_SSL:-}" = "true" ]; then
+        export PGSSLMODE=require
+    fi
+    export PGCONNECT_TIMEOUT=15
+}
+
+# --- create --------------------------------------------------------------------
+
+cmd_create() {
+    local label="${1:-manual}"
+    local stamp
+    local final
+    local work
+
+    label="${label//[^A-Za-z0-9._-]/_}"
+    stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+    final="$BACKUP_ROOT/${stamp}_${label}"
+    work="$final.partial"
+
+    install -d -m 0700 "$BACKUP_ROOT"
+    install -d -m 0700 "$work"
+    set_pg_connection
+
+    log "backing up the Fluxer database to $final"
+
+    # Any failure: keep what exists as <name>.failed for inspection, exit 1.
+    fail() {
+        log "ERROR: $*"
+        printf 'failed\n' >"$work/STATUS"
+        mv "$work" "$final.failed"
+        log "the incomplete backup was kept as $final.failed"
+        exit 1
+    }
+
+    if ! "$PG_BIN/pg_dump" "${PG_CONN[@]}" --format=custom --file="$work/fluxer.dump"; then
+        log "pg_dump failed. Usual causes: database unreachable, wrong password,"
+        log "or a Postgres server newer than this client ($("$PG_BIN/pg_dump" --version))."
+        fail "pg_dump failed"
+    fi
+    if [ ! -s "$work/fluxer.dump" ]; then
+        fail "pg_dump produced an empty file"
+    fi
+    if ! cp "$SECRETS" "$work/secrets.env"; then
+        fail "could not copy $SECRETS"
+    fi
+
+    # Validation 1: the archive's table of contents can be read.
+    if ! "$PG_BIN/pg_restore" --list "$work/fluxer.dump" >/dev/null; then
+        fail "validation failed: pg_restore cannot read the archive's table of contents"
+    fi
+    # Validation 2: every data block decompresses and reads back.
+    if ! "$PG_BIN/pg_restore" --file=/dev/null "$work/fluxer.dump"; then
+        fail "validation failed: pg_restore could not read all data in the archive"
+    fi
+
+    if ! (cd "$work" && sha256sum fluxer.dump secrets.env >SHA256SUMS); then
+        fail "could not write checksums"
+    fi
+    {
+        echo "created_utc=$stamp"
+        echo "label=$label"
+        echo "image_release=$(head -n 1 /etc/fluxer-aio/RELEASE 2>/dev/null)"
+        echo "pg_dump=$("$PG_BIN/pg_dump" --version)"
+        echo "dump_bytes=$(stat -c %s "$work/fluxer.dump")"
+    } >"$work/INFO"
+    printf 'verified\n' >"$work/STATUS"
+
+    mv "$work" "$final"
+    log "backup verified: $final ($(stat -c %s "$final/fluxer.dump") bytes)"
+    printf '%s\n' "$final"
+}
+
+# --- check ---------------------------------------------------------------------
+
+cmd_check() {
+    local d
+    local bad=0
+
+    while IFS= read -r d; do
+        if [ "$(status_of "$d")" != "verified" ]; then
+            continue
+        fi
+        if ! (cd "$d" && sha256sum --check --quiet SHA256SUMS >/dev/null 2>&1); then
+            printf 'corrupt\n' >"$d/STATUS"
+            log "WARNING: backup $d is CORRUPT (checksum mismatch); marked corrupt, NOT deleted"
+            bad=1
+        fi
+    done < <(backup_dirs)
+
+    if [ "$bad" -eq 0 ]; then
+        log "all verified backups passed their checksum check"
+    fi
+    return 0
+}
+
+# --- prune ---------------------------------------------------------------------
+
+cmd_prune() {
+    local dirs=()
+    local verified=()
+    local newest
+    local i
+
+    mapfile -t dirs < <(backup_dirs)
+    if [ "${#dirs[@]}" -eq 0 ]; then
+        return 0
+    fi
+
+    newest="${dirs[${#dirs[@]}-1]}"
+    if [ "$(status_of "$newest")" != "verified" ]; then
+        log "WARNING: newest backup $newest is $(status_of "$newest"); keeping every backup"
+        return 0
+    fi
+
+    # Verified backups, newest first.
+    for ((i = ${#dirs[@]} - 1; i >= 0; i--)); do
+        if [ "$(status_of "${dirs[$i]}")" = "verified" ]; then
+            verified+=("${dirs[$i]}")
+        fi
+    done
+
+    for ((i = KEEP; i < ${#verified[@]}; i++)); do
+        log "pruning old verified backup ${verified[$i]}"
+        rm -rf -- "${verified[$i]}"
+    done
+}
+
+# --- list ----------------------------------------------------------------------
+
+cmd_list() {
+    local d
+    while IFS= read -r d; do
+        printf '%-10s %s\n' "$(status_of "$d")" "${d#"$BACKUP_ROOT"/}"
+    done < <(backup_dirs)
+}
+
+# --- Main ----------------------------------------------------------------------
+
+case "${1:-create}" in
+    create)
+        shift || true
+        cmd_create "${1:-manual}"
+        ;;
+    check)
+        cmd_check
+        ;;
+    prune)
+        cmd_prune
+        ;;
+    list)
+        cmd_list
+        ;;
+    *)
+        echo "usage: fluxer-aio-backup [create [label] | check | prune | list]" >&2
+        exit 64
+        ;;
+esac

@@ -16,21 +16,28 @@ done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintai
 Decisions and validation design: ROADMAP item 17 (2026-11-21). Then merge
 PR #1 as its first real test.
 
-- [⏳] 0. Maintainer: Postgres major version of the converted server
+- [✓] 0. Postgres 18.2 on the converted server (2026-11-21) -> client 18; verification limit 10 min (maintainer: "long, but keep 10 for now").
   (`docker exec <pg-container> psql -U postgres -tAc "SHOW server_version;"`);
   confirm the 10-minute verification limit.
-- [ ] 1. Image: pinned `postgresql-client-<major>` (PostgreSQL apt repo, keyring
+- [✓] 1. Image: pinned `postgresql-client-<major>` (PostgreSQL apt repo, keyring
   checked), image records its Fluxer release (`/etc/fluxer-aio/RELEASE`)
-- [ ] 2. `fluxer-aio-backup`: pg_dump -Fc + secrets.env -> `/data/backups/<date>_<old>-to-<new>/`,
+- [✓] 2. `fluxer-aio-backup`: pg_dump -Fc + secrets.env -> `/data/backups/<date>_<old>-to-<new>/`,
   validate (list + full read), SHA-256, `verified` marker; manual use too
-- [ ] 3. Init: detect update, run backup, fail-closed; re-check kept backups'
+- [✓] 3. Init: detect update, run backup, fail-closed; re-check kept backups'
   SHA-256 every start (mark `corrupt`, never delete)
-- [ ] 4. Verify step: wait for health, then record release + prune (verified
+- [✓] 4. Verify step: wait for health, then record release + prune (verified
   only, keep 3, never while newest unverified); time limit
-- [ ] 5. Stubbed simulations (update/no-update/first start, backup fail,
+- [✓] 5. Stubbed simulations (update/no-update/first start, backup fail,
   corrupt archive, bit-rot on a kept backup, retention edge cases)
-- [ ] 6. Docs: fluxer-aio README (backups, restore), docs/operations.md,
+  - Done 2026-11-21 (Windows Git Bash, stub pg_dump/pg_restore, real
+    sha256): backup/retention/verify 35/35 PASS; init update section 15/15
+    PASS (first start, same release, update, restart while unverified,
+    backup failure = exit 1 + no config + release not pending, retry).
+- [•] 6. Docs: fluxer-aio README (backups, restore), docs/operations.md,
   audit, HISTORY; CI build green
+  - Docs done 2026-11-21 (README Backups + restore steps, operations.md
+    sections 3/4c/5/7, template overview, audit, HISTORY; selftest checks
+    pg_dump/pg_restore). Pushed without [skip ci]: CI builds fluxer-aio.
 - [ ] 7. [⏳] Live test on Unraid: merge PR #1, force update, confirm backup +
   verify + prune in the log
 

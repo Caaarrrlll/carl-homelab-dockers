@@ -7,7 +7,8 @@
 #  4. Loads secrets from /data/secrets.env, generating any that are missing
 #     (upstream's documented openssl commands), and hands every value to the
 #     services through s6's container environment.
-#  5. Writes the NATS and LiveKit config files.
+#  5. Before an update, backs up and validates the database (fail-closed).
+#  6. Writes the NATS and LiveKit config files.
 #
 # Secrets are generated ONCE and kept in /data/secrets.env (mode 0600).
 # Fluxer says several of them must never change after the first start, so
@@ -303,7 +304,53 @@ if [ -z "${FLUXER_SETUP_TOKEN:-}" ] && [ -z "$(stored FLUXER_SETUP_TOKEN)" ]; th
 fi
 secret FLUXER_SETUP_TOKEN gen_hex
 
-# --- 5. Config files -----------------------------------------------------------
+# --- 5. Backup before an update (ROADMAP item 17) -----------------------------
+# The image's Fluxer release is compared with the last release that became
+# healthy here. A different release is an update: Fluxer migrates its database
+# when the api starts, so the database is backed up and validated FIRST. If
+# that fails, this script stops and Fluxer is not started. The release is
+# recorded as good only after the health check passes (svc-update-verify).
+
+STATE_DIR="$DATA_DIR/.fluxer-aio"
+install -d -m 0700 "$STATE_DIR"
+
+IMAGE_RELEASE="$(head -n 1 /etc/fluxer-aio/RELEASE)"
+last_good=""
+if [ -r "$STATE_DIR/last-good-release" ]; then
+    last_good="$(cat "$STATE_DIR/last-good-release")"
+fi
+pending=""
+if [ -r "$STATE_DIR/pending-release" ]; then
+    pending="$(cat "$STATE_DIR/pending-release")"
+fi
+
+# Re-check every kept backup; damaged ones are marked corrupt, never deleted.
+/usr/local/bin/fluxer-aio-backup check
+
+if [ -z "$last_good" ]; then
+    log "first start on $IMAGE_RELEASE: no backup needed"
+elif [ "$last_good" = "$IMAGE_RELEASE" ]; then
+    log "release $IMAGE_RELEASE unchanged: no backup needed"
+elif [ "$pending" = "$IMAGE_RELEASE" ] && [ -s "$STATE_DIR/pending-backup" ]; then
+    log "update to $IMAGE_RELEASE not verified yet; pre-update backup already taken:" \
+        "$(cat "$STATE_DIR/pending-backup")"
+else
+    log "update ${last_good} -> ${IMAGE_RELEASE}: backing up the database before Fluxer starts"
+    if ! backup_dir="$(/usr/local/bin/fluxer-aio-backup create \
+        "${last_good#*@}-to-${IMAGE_RELEASE#*@}")"
+    then
+        log "ERROR: the pre-update backup FAILED (see the lines above)."
+        log "ERROR: Fluxer was NOT started, so the database was not migrated."
+        log "ERROR: Fix the cause (database reachable? Postgres newer than the"
+        log "ERROR: backup client?) and restart, or roll back the image"
+        log "ERROR: (docs/operations.md section 4)."
+        exit 1
+    fi
+    printf '%s' "$backup_dir" >"$STATE_DIR/pending-backup"
+fi
+printf '%s' "$IMAGE_RELEASE" >"$STATE_DIR/pending-release"
+
+# --- 6. Config files -----------------------------------------------------------
 
 # NATS with JetStream.
 cat >"$RUNDIR/nats.conf" <<EOF

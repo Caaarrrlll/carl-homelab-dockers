@@ -19,6 +19,7 @@
   <Overview>Fluxer (open-source chat: text, voice, video) in ONE container. Unofficial: not affiliated with or supported by the Fluxer project.[br][br]
 Inside: Fluxer api, gateway, media-proxy and Rust services, plus NATS, Meilisearch, LiveKit (voice) and an internal HTTP router. You provide: a Postgres database, a Redis/Valkey server and a reverse proxy with TLS for your domain.[br][br]
 Before the first start: create the Postgres role and database (CREATE ROLE fluxer LOGIN PASSWORD '...'; CREATE DATABASE fluxer OWNER fluxer;), point your reverse proxy at this container's HTTP port (all paths, websockets on), and forward TCP 7881 + UDP 7882 on your router for voice/video.[br][br]
+Updates: before a new Fluxer release first starts, the container backs up and validates the Fluxer database into /data/backups (keeps 3 good ones); if that fails, Fluxer is not started and the log says why.[br][br]
 First start: the log prints a setup token ('[fluxer-aio-init] first start: setup token ...'); open https://your-domain and enter it to create the admin account. Secrets are generated once into /data/secrets.env: back up the Data folder (and your Postgres database). Several of those secrets must never change.[br][br]
 Every service logs to the container log with a [service] prefix. The health check names the first failing service.</Overview>
   <Category>Social: Network:Voip</Category>

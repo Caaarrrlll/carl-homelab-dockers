@@ -49,7 +49,9 @@ for f in \
     /usr/local/bin/meilisearch \
     /usr/local/bin/nats-server \
     /usr/local/bin/livekit-server \
-    /usr/local/bin/caddy
+    /usr/local/bin/caddy \
+    "${PG_BIN:-/usr/lib/postgresql/18/bin}/pg_dump" \
+    "${PG_BIN:-/usr/lib/postgresql/18/bin}/pg_restore"
 do
     if [ ! -x "$f" ]; then
         say "FAIL not executable: $f"
@@ -108,6 +110,7 @@ nats-server --version
 meilisearch --version
 livekit-server --version
 caddy version
+"${PG_BIN:-/usr/lib/postgresql/18/bin}/pg_dump" --version
 
 # --- Router config -------------------------------------------------------------
 

@@ -1,0 +1,13 @@
+#!/command/with-contenv bash
+# s6 longrun, started after init-fluxer-aio (see dependencies.d).
+# After a first start or an update: waits for the health check, then records
+# the release as good and prunes old backups (fluxer-aio-verify-update).
+
+set -e
+
+# --- Log prefix ----------------------------------------------------------------
+# Prefix every output line with the service name in the container log.
+exec > >(exec sed -u "s/^/[update-verify] /") 2>&1
+
+# --- Start ---------------------------------------------------------------------
+exec /usr/local/bin/fluxer-aio-verify-update

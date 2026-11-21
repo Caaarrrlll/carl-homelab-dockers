@@ -70,6 +70,24 @@ RUN apt-get update \
     && rm -f /usr/lib/*/libheif.so.1* \
     && rm -rf /var/lib/apt/lists/*
 
+# --- PostgreSQL client (pg_dump for the pre-update backups) ---------------------
+# From the PostgreSQL project's apt repository. The signing key file is pinned
+# by SHA-256 (key fingerprint B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8, checked
+# 2026-11-21). The client's major version must be the same as or newer than
+# the Postgres server's (pg_dump refuses newer servers): see README "Backups".
+ARG PG_CLIENT_MAJOR=18
+ARG PGDG_KEY_SHA256=0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76
+RUN wget -qO /usr/share/keyrings/pgdg.asc \
+        https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && echo "${PGDG_KEY_SHA256}  /usr/share/keyrings/pgdg.asc" | sha256sum -c - \
+    && echo "deb [signed-by=/usr/share/keyrings/pgdg.asc] https://apt.postgresql.org/pub/repos/apt trixie-pgdg main" \
+        > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get -y install --no-install-recommends \
+        "postgresql-client-${PG_CLIENT_MAJOR}" \
+    && rm -rf /var/lib/apt/lists/*
+ENV PG_BIN=/usr/lib/postgresql/${PG_CLIENT_MAJOR}/bin
+
 # --- s6-overlay (process supervisor) ---------------------------------------------
 # Pinned version + SHA-256 (checked against the release's .sha256 files on
 # 2026-11-18); the build fails on mismatch.
@@ -115,6 +133,7 @@ COPY --from=caddy /usr/bin/caddy /usr/local/bin/caddy
 # self-test fails the build on a missing library or invalid config.
 COPY rootfs/ /
 COPY upstream/env/ /etc/fluxer-aio/env/
+COPY upstream/RELEASE /etc/fluxer-aio/RELEASE
 RUN chmod 0755 /usr/local/bin/fluxer-aio-* \
     && find /etc/s6-overlay/s6-rc.d -name run -exec chmod 0755 {} + \
     && ldconfig \
