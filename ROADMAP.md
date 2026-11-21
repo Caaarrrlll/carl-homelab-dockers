@@ -104,7 +104,8 @@ to silence warnings in the container log: when testing, compare the start-up
 log with and without them and keep them if warnings come back.
 **Order:** `screen` first (nothing calls it; it can't affect Wine), then
 `xvfb` as its own change. **`screen` removed** (`7ce1b33`, tested on Unraid
-2026-11-21: no new log errors, joinable, saves on stop). Next: `xvfb`.
+2026-11-21: no new log errors, joinable, saves on stop). **`xvfb` removal**
+in test since 2026-11-21.
 **Risk: 🟡 Medium.** Removing a package Wine or SteamCMD quietly relies on
 would only show up at runtime.
 

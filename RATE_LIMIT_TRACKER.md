@@ -11,6 +11,18 @@ Legend: `[ ]` pending · `[•]` in progress (list the files it touches) · `[�
 done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintainer
 (live Unraid action or decision).
 
+## Active task — ROADMAP 9 part 2: remove `xvfb` from asa-wine (2026-11-21)
+
+`screen` already removed and tested (`7ce1b33`). If Wine display warnings
+appear after this, put `xvfb` back (or roll back with Retag `previous`).
+
+- [✓] 1. Remove `xvfb`: Dockerfile, audit.md, ROADMAP 9
+- [•] 2. Commit + push; CI builds asa-wine only; run green
+- [⏳] 3. Maintainer: stop all ASA containers, force update, start one at a
+  time; compare the start-up log (X/`DISPLAY` warnings?), joinable, save on
+  stop
+- [ ] 4. Record result; close ROADMAP 9 (move to ROADMAP_HISTORY.md)
+
 ## Active task — build `caaarrrlll/fluxer-aio` (2026-11-18)
 
 **Status 2026-11-20:** steps 1-9 done; fluxer-aio runs healthy; release

@@ -7,15 +7,14 @@ LABEL org.opencontainers.image.source="https://github.com/Caaarrrlll/carl-homela
 LABEL org.opencontainers.image.licenses="MIT"
 
 # --- Packages ------------------------------------------------------------------
-# 32-bit libraries for SteamCMD, plus xvfb and winbind (see ROADMAP item 9
-# before removing xvfb; screen was removed 2026-11-21).
+# 32-bit libraries for SteamCMD, plus winbind (Wine uses ntlm_auth).
+# screen and xvfb were removed 2026-11-21 (unused; ROADMAP item 9).
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         lib32gcc-s1 \
         lib32stdc++6 \
         lib32z1 \
         winbind \
-        xvfb \
     && rm -rf /var/lib/apt/lists/*
 
 # --- RCON client ---------------------------------------------------------------
