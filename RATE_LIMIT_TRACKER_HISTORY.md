@@ -9,6 +9,22 @@ move its checklist section here, newest first.
 
 ---
 
+## ROADMAP 9 part 1: remove `screen` from asa-wine (done 2026-11-21)
+
+Test removing `screen` only; `xvfb` is a later, separate test. First CI
+build of the ASA image since the code-style reformat (`a1df1be`, skip ci), so
+the live test also covers the reformatted scripts.
+
+- [✓] 1. Remove `screen`: Dockerfile, audit.md, ROADMAP 9
+- [✓] 2. Commit + push (`7ce1b33`); CI run 44911523820 green, built
+  asa-wine only (levels 0/1 skipped)
+- [✓] 3. Maintainer tested on Unraid (2026-11-21): no new errors in the
+  start-up log, server joinable, save on stop works
+- [✓] 4. Result recorded in audit.md and ROADMAP 9; next: `xvfb` test
+  (separate change, not started)
+
+---
+
 ## ROADMAP 14: Wine vs Proton / Proton-GE research (done 2026-11-21)
 
 Research only, no image changes. Scope: the ASA server (maintainer did not

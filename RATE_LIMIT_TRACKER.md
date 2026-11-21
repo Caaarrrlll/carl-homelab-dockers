@@ -11,19 +11,6 @@ Legend: `[ ]` pending · `[•]` in progress (list the files it touches) · `[�
 done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintainer
 (live Unraid action or decision).
 
-## Active task — ROADMAP 9 part 1: remove `screen` from asa-wine (2026-11-21)
-
-Test removing `screen` only; `xvfb` is a later, separate test. First CI
-build of the ASA image since the code-style reformat (`a1df1be`, skip ci), so
-the live test also covers the reformatted scripts.
-
-- [✓] 1. Remove `screen`: Dockerfile, audit.md, ROADMAP 9
-- [•] 2. Commit + push; CI builds asa-wine only; run green
-- [⏳] 3. Maintainer: stop all ASA containers, force update, start one at a
-  time; compare the start-up log with the previous one (new warnings?),
-  server joinable, save on stop works
-- [ ] 4. Record result in audit/ROADMAP 9; next: `xvfb` test (separate)
-
 ## Active task — build `caaarrrlll/fluxer-aio` (2026-11-18)
 
 **Status 2026-11-20:** steps 1-9 done; fluxer-aio runs healthy; release
