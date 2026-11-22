@@ -221,6 +221,47 @@ When upstream ships it, check:
 The weekly release watch (`.github/workflows/fluxer-release-watch.yml`)
 opens a PR for every new Fluxer release; check its release notes there.
 
+### 20. fluxer-aio: resource investigation (RAM per server)
+**Status: 🔭 TO DO (added 2026-11-22).** Blocks item 21 (softly).
+**Risk: 🟢 Low** (measuring only).
+
+We don't know how much RAM fluxer-aio needs, or what running **several
+Fluxer servers** (instances) would cost. Measure before planning a move:
+
+1. Current use: `docker stats --no-stream` for fluxer-aio, plus the share of
+   the shared Postgres and Redis it uses, at idle and during a voice call.
+2. Per component inside the image (api, gateway, media proxy, LiveKit,
+   NATS, Meilisearch, SeaweedFS, router Caddy): which ones dominate.
+3. What a second (third, …) instance would add: which parts are per
+   instance and which could be shared.
+4. Write the numbers down (`docs/`), as the input for item 21.
+
+### 21. fluxer-aio: move to a small host such as a Raspberry Pi (investigate)
+**Status: 🔭 INVESTIGATE (added 2026-11-22). Soft-blocked by item 20**: the
+RAM needs (especially for several servers) decide whether a Pi is big enough.
+**Risk: 🟢 Low** for the investigation; **🔴 High** for the migration itself
+(moves the live chat database).
+
+1. **Can it run there:** a Pi is ARM (`arm64`). The image is built for
+   `amd64` only today; check whether every upstream Fluxer component (copied
+   from their images by digest), s6-overlay and the other parts exist for
+   `arm64`, and what a multi-arch CI build would need.
+2. **Integrations:** today fluxer-aio relies on an external Postgres, Redis
+   and Caddy on the Unraid host. On another host, either keep using them over
+   the LAN, or (optional, decide after the investigation) **expand the AIO
+   with its own isolated Postgres, Redis and Caddy** for a fully standalone
+   box. Compare RAM, backups, TLS/DNS, router port forwards (voice 7881/tcp,
+   7882/udp) and what stays on Unraid.
+3. **Migration steps** (only if the investigation says go; written for
+   anyone in `docs/operations.md` or the README):
+   1. Take and verify a backup of the current database (`fluxer-aio-backup`,
+      plus a `pg_dump -Fc` checked with `pg_restore --list`), and copy
+      `/data` (secrets, uploads).
+   2. Set up the new host and restore the database into its Postgres.
+   3. Point DNS / the reverse proxy and the port forwards at the new host.
+   4. Check login, messages, uploads and voice; keep the old install stopped
+      but intact as the rollback until the new one has run for a while.
+
 ## Suggested order
 
 0. **Test first:** done 2026-11-18 (housekeeping items 5 + 7 closed). Item 15
