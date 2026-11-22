@@ -2,7 +2,7 @@
 FROM caaarrrlll/wine-baseimage:latest
 
 # --- Labels ------------------------------------------------------------------
-LABEL org.opencontainers.image.authors="venter109@gmail.com"
+LABEL org.opencontainers.image.authors="Caaarrrlll"
 LABEL org.opencontainers.image.source="https://github.com/Caaarrrlll/carl-homelab-dockers"
 LABEL org.opencontainers.image.licenses="MIT"
 

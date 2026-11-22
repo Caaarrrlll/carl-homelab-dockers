@@ -9,7 +9,7 @@
 | Base image | `caaarrrlll/debian-slim-baseimage:trixie-latest` |
 | Build context | `images/apps/fluxer-aio/` |
 | Upstream | Fluxer `fluxer-release@2026.1120.164141` compose bundle (`upstream/RELEASE`) |
-| Last audited | 2026-11-21 |
+| Last audited | 2026-11-22 |
 
 ## Current snapshot
 
@@ -74,6 +74,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
+| 2026-11-22 | _(this change)_ | Authors label | `org.opencontainers.image.authors` set to the GitHub username `Caaarrrlll` instead of an email address (privacy). Label only, no behaviour change; committed with `[skip ci]`, so it takes effect at the next build (monthly or manual). |
 | 2026-11-21 | `7dae9a6` | Fluxer release 2026.1118.90548 -> 2026.1120.164141 | Automated bump (upstream/bump-release.py): image digests, env regenerated; Meilisearch unchanged (1.53.0). Review the snapshot's version notes. |
 | 2026-11-21 | `d1d3076` | update-verify: no doubled log prefix | Live test part 1 (first start, release recorded after 30 s) passed on Unraid; its lines read `[update-verify] [update-verify]`. Script no longer adds the prefix the s6 run file already adds. |
 | 2026-11-21 | `5b7582a` | Backup -> upgrade -> verify -> clean up (ROADMAP 17) | PostgreSQL 18 client (PGDG repo, key pinned by SHA-256); `fluxer-aio-backup` (pg_dump + secrets, validated by `pg_restore --list` and a full read, SHA-256, retention 3 verified, corrupt/failed never deleted, no pruning while the newest is not verified); init backs up before an update and exits (Fluxer not started) on failure; `svc-update-verify` records the release after the health check (10 min) and prunes. Simulated (50 checks); CI green; live-tested on Unraid 2026-11-21 (update to 2026.1120.164141: backup verified before start, recorded as good after the health check). |

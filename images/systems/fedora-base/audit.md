@@ -8,7 +8,7 @@
 | Docker Hub image | `caaarrrlll/fedora-baseimage:latest` (assumed) |
 | Base image | `fedora:44` |
 | Build context | `images/systems/fedora-base/` |
-| Last audited | 2026-11-21 |
+| Last audited | 2026-11-22 |
 
 ## Current snapshot
 
@@ -23,6 +23,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
+| 2026-11-22 | _(this change)_ | Authors label | `org.opencontainers.image.authors` set to the GitHub username `Caaarrrlll` instead of an email address (privacy). Label only, no behaviour change; committed with `[skip ci]`, so it takes effect at the next build (monthly or manual). |
 | 2026-11-21 | `a1df1be` | Code-style reformat | Dockerfile reformatted to the code-style standard (parked image, not built by default). No behaviour change (equivalence check). |
 | 2026-10-23 | `f9d130d` | fedora base | Initial usable image |
 | 2026-10-23 | `d895a48` | first commit | |

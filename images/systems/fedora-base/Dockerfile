@@ -4,7 +4,7 @@ FROM fedora:44
 # --- Labels ------------------------------------------------------------------
 # NOTE: the source label still points at the old debian-slim-baseimage repo
 # (copy-paste leftover, see AGENTS.md "Notes / gotchas").
-LABEL org.opencontainers.image.authors="venter109@gmail.com"
+LABEL org.opencontainers.image.authors="Caaarrrlll"
 LABEL org.opencontainers.image.source="https://github.com/Caaarrrlll/debian-slim-baseimage"
 LABEL org.opencontainers.image.licenses="MIT"
 

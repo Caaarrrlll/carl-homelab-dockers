@@ -9,7 +9,7 @@
 | Base image | `caaarrrlll/wine-baseimage:latest` |
 | Build context | `images/games/asa-docker/` |
 | Game | ARK: Survival Ascended, app id `2430930` |
-| Last audited | 2026-11-21 |
+| Last audited | 2026-11-22 |
 
 ## Current snapshot
 
@@ -54,6 +54,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
+| 2026-11-22 | _(this change)_ | Authors label | `org.opencontainers.image.authors` set to the GitHub username `Caaarrrlll` instead of an email address (privacy). Label only, no behaviour change; committed with `[skip ci]`, so it takes effect at the next build (monthly or manual). |
 | 2026-11-21 | `ae4af3c` | Remove `xvfb` | Unused package (no script starts `Xvfb` or sets `DISPLAY`), removed for a smaller image (ROADMAP 9, part 2; item closed). No RAM effect. CI run 44912413172 green. **Tested on Unraid 2026-11-21 (maintainer):** no new warnings, server joinable, save on stop works. |
 | 2026-11-21 | `7ce1b33` | Remove `screen` | Unused package (no script calls it), removed for a smaller image (ROADMAP 9, part 1); `xvfb` stays for a separate test. No RAM effect. First CI build since the reformat below (run 44911523820 green). **Tested on Unraid 2026-11-21 (maintainer):** no new errors in the start-up log, server joinable, save on stop works. This also confirms the reformatted scripts live. |
 | 2026-11-21 | `a1df1be` | Code-style reformat | Dockerfile and `start.sh` / `start-server.sh` / `start-watchdog.sh` reformatted to the code-style standard (4-space indent, `if` blocks instead of `||`/`&&` shortcuts, split long lines; ARK launch URL assembled from pieces). No behaviour change: Dockerfile equivalence check; old vs new scripts produce identical transcripts in stubbed simulations (5 stop-handler scenarios with a real SIGTERM, 6 start-server scenarios incl. every Wine launch argument). Simulated, not tested on Unraid. |

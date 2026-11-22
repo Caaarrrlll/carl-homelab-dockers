@@ -38,7 +38,7 @@ FROM caaarrrlll/debian-slim-baseimage:trixie-latest
 # --- Labels ----------------------------------------------------------------------
 # Our scripts are MIT; the bundled Fluxer components are AGPL-3.0-or-later
 # (source: https://github.com/fluxerapp/fluxer, release in upstream/RELEASE).
-LABEL org.opencontainers.image.authors="venter109@gmail.com"
+LABEL org.opencontainers.image.authors="Caaarrrlll"
 LABEL org.opencontainers.image.source="https://github.com/Caaarrrlll/carl-homelab-dockers"
 LABEL org.opencontainers.image.licenses="MIT AND AGPL-3.0-or-later"
 LABEL org.opencontainers.image.description="Fluxer chat (unofficial all-in-one) for Unraid; needs external Postgres, Redis and a reverse proxy"
