@@ -200,6 +200,27 @@ can run without the Steam client, so it may be worth another look.
 4. **Migration** (if ever): its own planned change, with the rollback tags in
    place, like ROADMAP item 1.
 
+### 19. fluxer-aio: decentralised (federated) servers
+**Status: ⏳ PENDING upstream (added 2026-11-22).** Nothing to do until
+Fluxer itself supports decentralised servers. Once it does, investigate and
+implement it in fluxer-aio.
+**Risk: 🟡 Medium** (expected: new settings and probably new ports or proxy
+routes; the existing data and backups must keep working).
+
+When upstream ships it, check:
+
+1. What it needs: new services or components, env vars, keys or secrets,
+   ports, DNS records, reverse-proxy routes (e.g. `.well-known` paths).
+2. Whether it fits the all-in-one image or needs something outside it.
+3. Security: what becomes reachable from the internet, and what other
+   servers can see or store.
+4. Then implement: Dockerfile / `upstream/gen-env.py` inputs, README
+   ("Settings", "Ports", "Requirements"), `templates/fluxer-aio.xml`,
+   `audit.md`, and the operator steps in `docs/operations.md`.
+
+The weekly release watch (`.github/workflows/fluxer-release-watch.yml`)
+opens a PR for every new Fluxer release; check its release notes there.
+
 ## Suggested order
 
 0. **Test first:** done 2026-11-18 (housekeeping items 5 + 7 closed). Item 15
