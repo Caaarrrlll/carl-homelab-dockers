@@ -12,12 +12,12 @@
 # updates upstream/RELEASE, the *_IMAGE / MEILISEARCH_* ARG lines below and
 # upstream/env. Keep those ARG lines as single `ARG NAME=value` lines.
 
-# --- Upstream images (Fluxer release 2026.1120.164141) ------------------------
-ARG FLUXER_API_IMAGE=ghcr.io/fluxerapp/fluxer-api@sha256:d63f39590a6cde6a4a888c6a3c35eb85cfa3be21064f6a60a5c91f8b204fa1c3
-ARG FLUXER_GATEWAY_IMAGE=ghcr.io/fluxerapp/fluxer-gateway@sha256:0a78e5126628625e4f67be06fff6d1e2ca3cf8e4485526a50c4e4a0bd28305c1
-ARG FLUXER_MEDIA_PROXY_IMAGE=ghcr.io/fluxerapp/fluxer-media-proxy@sha256:0d6f5c4355655d12cfed9be522bc25b6941a197eff21f0366b48c7e409b38df7
-ARG FLUXER_SERVER_IMAGE=ghcr.io/fluxerapp/fluxer-server@sha256:e88e67a883ca79897ebe44077bbbcb90d49f3939748e2ee293900c4637cecb91
-ARG FLUXER_STATIC_IMAGE=ghcr.io/fluxerapp/fluxer-static@sha256:a62c4b51a22683d9ce44c474d46ad8a34e1c2391854bb3145904f7a95d3ca6ac
+# --- Upstream images (Fluxer release 2026.1123.15517) ------------------------
+ARG FLUXER_API_IMAGE=ghcr.io/fluxerapp/fluxer-api@sha256:cb71d2c89cebf99e18681ed7223a440f53f7cb8773470e48a7bdc38e1fcab09d
+ARG FLUXER_GATEWAY_IMAGE=ghcr.io/fluxerapp/fluxer-gateway@sha256:ef858c2e4a986e213a21402563b540609f45450ce9f5f073dc6ece4a6a81131a
+ARG FLUXER_MEDIA_PROXY_IMAGE=ghcr.io/fluxerapp/fluxer-media-proxy@sha256:984f7a45fc942027ed96245d39963287aeba84d0ca300c5f0e8ad2d04b162411
+ARG FLUXER_SERVER_IMAGE=ghcr.io/fluxerapp/fluxer-server@sha256:0210d41ef163cd3b5afe48dc8a8735249eade9cf199b89b394ae1eac5fb5a3d5
+ARG FLUXER_STATIC_IMAGE=ghcr.io/fluxerapp/fluxer-static@sha256:178f55b2d9cc0b4daeaa25b75fd67e7af61e86ef49063d6209039f3262b79b14
 ARG NATS_IMAGE=nats:2.14-alpine@sha256:311da47e2f31c26e99c623cd78d486a1e8ab039c49b32652770bb91a4f70512e
 ARG LIVEKIT_IMAGE=livekit/livekit-server:v1.12.0@sha256:b1281e66e35e8f9749ffbcf0fe6ab4d40d1438aa00f36c2ea7e6975e5e261e2e
 ARG CADDY_IMAGE=caddy:2.11-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0

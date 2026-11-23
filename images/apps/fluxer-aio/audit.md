@@ -8,8 +8,8 @@
 | Docker Hub image | `caaarrrlll/fluxer-aio:latest` |
 | Base image | `caaarrrlll/debian-slim-baseimage:trixie-latest` |
 | Build context | `images/apps/fluxer-aio/` |
-| Upstream | Fluxer `fluxer-release@2026.1120.164141` compose bundle (`upstream/RELEASE`) |
-| Last audited | 2026-11-22 |
+| Upstream | Fluxer `fluxer-release@2026.1123.15517` compose bundle (`upstream/RELEASE`) |
+| Last audited | 2026-11-23 |
 
 ## Current snapshot
 
@@ -74,6 +74,7 @@
 
 | Date | Commit | Change | Notes |
 |---|---|---|---|
+| 2026-11-23 | _(this change)_ | Fluxer release 2026.1120.164141 -> 2026.1123.15517 | Automated bump (upstream/bump-release.py): image digests, env regenerated; Meilisearch unchanged (1.53.0). Review the snapshot's version notes. |
 | 2026-11-22 | _(this change)_ | Authors label | `org.opencontainers.image.authors` set to the GitHub username `Caaarrrlll` instead of an email address (privacy). Label only, no behaviour change; committed with `[skip ci]`, so it takes effect at the next build (monthly or manual). |
 | 2026-11-21 | `7dae9a6` | Fluxer release 2026.1118.90548 -> 2026.1120.164141 | Automated bump (upstream/bump-release.py): image digests, env regenerated; Meilisearch unchanged (1.53.0). Review the snapshot's version notes. |
 | 2026-11-21 | `d1d3076` | update-verify: no doubled log prefix | Live test part 1 (first start, release recorded after 30 s) passed on Unraid; its lines read `[update-verify] [update-verify]`. Script no longer adds the prefix the s6 run file already adds. |
