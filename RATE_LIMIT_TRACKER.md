@@ -11,6 +11,32 @@ Legend: `[ ]` pending · `[•]` in progress (list the files it touches) · `[�
 done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintainer
 (live Unraid action or decision).
 
+## Active task — ROADMAP 22: SteamCMD "state is 0x6" investigation (2026-11-26)
+
+Test copy of the broken install made by the maintainer (2026-11-26):
+`<test-copy>` (a `cp -r` of the live shared install `<live-install>`, taken
+while the update was failing). Fixes are tried only on the copy, from a
+separate test container. Real paths/names stay out of the repo.
+
+- [⏳] 1. Maintainer: test container on `<test-copy>`
+  - own Unraid template copy: different name, game/query ports, its own
+    SteamCMD folder (never the live one; two SteamCMD runs on one folder
+    clash), not started with the live cluster's settings that matter
+  - first start: confirm the log reproduces `state is 0x6` (SteamCMD's exit
+    code isn't logged today; checking it needs an image change, step 4)
+- [ ] 2. Try the fixes in ROADMAP 22's order (re-copy `<test-copy>` from the
+  untouched original between attempts if one changes the result)
+- [ ] 3. Record results in ROADMAP 22; decide the fix
+- [ ] 4. Implement in `start-server.sh` (+ audit, README, operations.md); CI
+- [⏳] 5. Maintainer: test the new image on the test container
+- [⏳] 6. Migration (after the fix is live): move all ASA templates from
+  `<live-install>` to the final folder name and drop `-new`
+  - stop all ASA servers first; the live saves have moved on since the copy,
+    so either **rename** the live folder (after removing the test copy) or
+    re-sync live -> final with `rsync -a` before switching; never switch
+    the servers onto the test copy as-is (progress since the copy is lost)
+  - update every template's serverfiles path; start one at a time
+
 ## Active task — build `caaarrrlll/fluxer-aio` (2026-11-18)
 
 **Status 2026-11-20:** steps 1-9 done; fluxer-aio runs healthy; release
