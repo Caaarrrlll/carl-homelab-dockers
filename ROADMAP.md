@@ -173,6 +173,9 @@ first).
 with `Error! App '2430930' state is 0x6 after update job.` and the update is
 not installed. `start-server.sh` does not check SteamCMD's result
 (`+app_update` around line 100), so it then starts ARK on the old files.
+**Confirmed by the maintainer (2026-11-26):** the server boots and runs
+normally, just on the old game version, so the failure is easy to miss
+(players with an updated game will likely not be able to join).
 **Manual fix today:** stop the container, delete the `steamapps` folder in
 the shared server files, start the container again; the update then
 installs.
