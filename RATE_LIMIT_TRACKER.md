@@ -305,6 +305,11 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
 Previous (2026-11-18): Fluxer / Stoat research
 (see `RATE_LIMIT_TRACKER_HISTORY.md`).
 
+Open check (2026-11-26): Astraeos has had multiple successful boots but
+still no very long running session (a power outage and game updates kept
+restarting it). The long-run check stays open in `docs/housekeeping.md`
+item 6.
+
 ROADMAP item 14 research done and parked 2026-11-21 (see
 `RATE_LIMIT_TRACKER_HISTORY.md`); item 9 done the same day.
 (Old `GameAnalytics.bak-*` folder and `ga-find.txt` removed by the maintainer, 2026-11-18.)
