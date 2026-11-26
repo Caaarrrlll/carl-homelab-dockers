@@ -332,6 +332,47 @@ RAM needs (especially for several servers) decide whether a Pi is big enough.
    4. Check login, messages, uploads and voice; keep the old install stopped
       but intact as the rollback until the new one has run for a while.
 
+### 23. Privacy comparison: Discord vs hosted Fluxer and hosted Stoat (investigate)
+**Status: 🔭 INVESTIGATE (added 2026-11-26, maintainer).** Research only;
+the outcome may lead to a planned migration of the maintainer's friend group
+from Discord to Fluxer.
+**Risk: 🟢 Low** (research and docs).
+
+Trigger: Discord's privacy policy update (published 2026-11-23, effective
+2026-12-15). Compared with the 2025-09-29 version, it adds: age assurance
+(region from IP/device, third-party ID/selfie checks, an age-estimation
+model, age-signal logs); sponsored content personalized **by default**
+outside consent regions, plus advertising IDs and ad interaction data; more
+explicit machine-learning use ("features or machine learning models");
+voice/video wording "generally does not access or store", with Clips as the
+exception; wider disclosure (server content in search results, Family Center
+parent access, gaming platforms, child-safety task forces).
+Sources: https://discord.com/privacy and
+https://discord.com/terms/privacy-policy-september-2025.
+
+1. **Compare the hosted (not self-hosted) services** of Fluxer and Stoat
+   with Discord, point by point from their own privacy policies and terms:
+   data collected; age verification; ads, tracking, analytics and
+   advertising IDs; AI/ML use of content; voice/video handling and
+   encryption (E2EE for DMs or calls?); sharing with third parties and
+   authorities; retention and deletion; data export; where data is hosted
+   and which law applies; who runs the service and how it is funded (what
+   keeps it from adding ads later); open source and self-host option.
+2. **Self-hosted fluxer-aio as the baseline:** what changes when the data is
+   on our own server (we control retention and access, but also carry the
+   backup, security and uptime duty; push notifications or other parts may
+   still go through upstream services; check which).
+3. **Features the group needs** (on hosted and self-hosted): text, voice,
+   video and screen share, mobile apps, bots (botsu already connects to
+   fluxer-aio), notifications, moderation, and importing or bridging
+   Discord history if that matters.
+4. **Write it up** (`docs/`) as a comparison table plus a recommendation.
+5. **If the recommendation is a move to Fluxer:** plan the migration as its
+   own item (which instance, hosted or our fluxer-aio; invites and accounts;
+   bots; a period running both; what happens to the Discord server). Ties
+   in with items 20/21 (resources, possible move to its own host) and 19
+   (federation).
+
 ## Suggested order
 
 0. **Test first:** done 2026-11-18 (housekeeping items 5 + 7 closed). Item 15
