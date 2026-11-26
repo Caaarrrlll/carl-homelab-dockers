@@ -196,6 +196,12 @@ files, or during a planned update window with all servers stopped):
    5. delete the whole folder (today's manual fix, for comparison).
    For each: does the retry succeed, does it re-download everything or only
    the changed files (time, data), and does the server start and join.
+   **Results so far (test copy, maintainer):**
+   - 2026-11-26, option 3 (remove `steamapps/appmanifest_2430930.acf` and
+     `steamapps/downloading/`): the next start **started a download**. Still
+     to note: whether it finished without `state is 0x6`, full download or
+     only the changed files, and whether the server started on the new
+     version. Options 1 and 2 alone not tested yet.
 3. **Rename vs delete:** prefer renaming (keeps evidence, and a way back);
    decide when the renamed copy is cleaned up (e.g. after the next good
    start) so it doesn't fill the disk.

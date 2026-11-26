@@ -24,7 +24,9 @@ separate test container. Real paths/names stay out of the repo.
     clash), not started with the live cluster's settings that matter
   - first start: confirm the log reproduces `state is 0x6` (SteamCMD's exit
     code isn't logged today; checking it needs an image change, step 4)
-- [ ] 2. Try the fixes in ROADMAP 22's order (re-copy `<test-copy>` from the
+- [•] 2. Try the fixes in ROADMAP 22's order
+  - 2026-11-26: option 3 (manifest + `downloading/` removed) started a
+    download on restart; outcome details pending (see ROADMAP 22) (re-copy `<test-copy>` from the
   untouched original between attempts if one changes the result)
 - [ ] 3. Record results in ROADMAP 22; decide the fix
 - [ ] 4. Implement in `start-server.sh` (+ audit, README, operations.md); CI
