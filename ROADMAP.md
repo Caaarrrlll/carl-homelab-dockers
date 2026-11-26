@@ -163,6 +163,53 @@ Open questions: how to tell "server is up" reliably from the log; whether
 non-primary containers should skip SteamCMD (item 1, point 5); schedule vs
 manual trigger; the grace period and reminder times as settings.
 
+### 22. ASA: recover from SteamCMD "state is 0x6" update failures (investigate)
+**Status: 🔭 INVESTIGATE (added 2026-11-26, maintainer).** Investigation
+first; no code until the tests below say what the fix is.
+**Risk: 🟡 Medium** (changes the start-up update path; test on one container
+first).
+
+**Symptom (seen on the live cluster):** at container start, SteamCMD ends
+with `Error! App '2430930' state is 0x6 after update job.` and the update is
+not installed. `start-server.sh` does not check SteamCMD's result
+(`+app_update` around line 100), so it then starts ARK on the old files.
+**Manual fix today:** stop the container, delete the `steamapps` folder in
+the shared server files, start the container again; the update then
+installs.
+
+Investigation (on one non-cluster container with its own copy of the server
+files, or during a planned update window with all servers stopped):
+
+1. **Detect:** confirm SteamCMD's exit code on this error (it may still be
+   0), so decide between the exit code and matching the log line
+   (`Error! App '<id>' state is 0x`). Note which other states appear.
+2. **Smallest fix:** find the least that has to go for the retry to work,
+   testing in this order and recording the result of each:
+   1. remove only `steamapps/downloading/`;
+   2. remove only `steamapps/appmanifest_2430930.acf`;
+   3. remove both;
+   4. **rename** the whole `steamapps` folder (e.g. `steamapps.bad-<date>`)
+      instead of deleting it;
+   5. delete the whole folder (today's manual fix, for comparison).
+   For each: does the retry succeed, does it re-download everything or only
+   the changed files (time, data), and does the server start and join.
+3. **Rename vs delete:** prefer renaming (keeps evidence, and a way back);
+   decide when the renamed copy is cleaned up (e.g. after the next good
+   start) so it doesn't fill the disk.
+
+Implementation (after the investigation, in `start-server.sh`):
+
+- Capture SteamCMD's output; on the error, apply the smallest fix found
+  above and retry `app_update` **once**.
+- If the retry fails too, do **not** start ARK on old files: log a clear
+  message and stop the container.
+- Shared install: this only runs when a container is starting and already
+  running SteamCMD, so it adds nothing a manual fix doesn't; item 18's
+  update script must check the same result on its primary server before
+  starting the others.
+- Document the manual fix in the ASA README / `docs/operations.md`
+  (agent-agnostic steps), and update `audit.md`.
+
 ## Future / research
 
 ### 14. Chore: Wine vs Proton / Proton-GE for the ASA server
