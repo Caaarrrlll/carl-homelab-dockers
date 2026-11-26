@@ -25,8 +25,11 @@ separate test container. Real paths/names stay out of the repo.
   - first start: confirm the log reproduces `state is 0x6` (SteamCMD's exit
     code isn't logged today; checking it needs an image change, step 4)
 - [•] 2. Try the fixes in ROADMAP 22's order
-  - 2026-11-26: option 3 (manifest + `downloading/` removed) started a
-    download on restart; outcome details pending (see ROADMAP 22) (re-copy `<test-copy>` from the
+  - 2026-11-26: option 3 (manifest + `downloading/` removed) started a full
+    verify (12.3 GB) then a download; outcome pending. Targeted deletes are
+    no real win (steamapps holds only manifest/downloading/temp); plan
+    simplified in ROADMAP 22: optional option-1 test, else rename
+    `steamapps` + retry once. On hold: maintainer returns to the roadmap soon (re-copy `<test-copy>` from the
   untouched original between attempts if one changes the result)
 - [ ] 3. Record results in ROADMAP 22; decide the fix
 - [ ] 4. Implement in `start-server.sh` (+ audit, README, operations.md); CI

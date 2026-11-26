@@ -198,10 +198,24 @@ files, or during a planned update window with all servers stopped):
    the changed files (time, data), and does the server start and join.
    **Results so far (test copy, maintainer):**
    - 2026-11-26, option 3 (remove `steamapps/appmanifest_2430930.acf` and
-     `steamapps/downloading/`): the next start **started a download**. Still
-     to note: whether it finished without `state is 0x6`, full download or
-     only the changed files, and whether the server started on the new
-     version. Options 1 and 2 alone not tested yet.
+     `steamapps/downloading/`): the next start **started an update**:
+     SteamCMD first verified the whole install (`Update state (0x5)
+     verifying install`, 12.3 GB), then began downloading (`0x61`).
+     Outcome (`Success!` or `0x6` again, how much was downloaded, server on
+     the new version) still to be recorded; the run was in progress.
+   - `steamapps/` holds only the manifest, `downloading/` and `temp/`. So
+     removing specific files and removing the whole folder are practically
+     the same: both drop the manifest, and without it SteamCMD verifies all
+     ~12 GB before downloading. Targeted deletes are **not** a real win.
+   - The maintainer's manual fix (delete the whole `steamapps` folder) has
+     **never failed** in the past.
+
+   **Simplified plan (2026-11-26):** skip options 2, 3 and 5. The only test
+   still worth doing is option 1 (remove only `downloading/`, keep the
+   manifest), because keeping the manifest might skip the full verify.
+   Otherwise go with option 4: **rename** `steamapps` (cheap, keeps evidence
+   and a way back), retry `app_update` once, and delete the renamed folder
+   after the next good start.
 3. **Rename vs delete:** prefer renaming (keeps evidence, and a way back);
    decide when the renamed copy is cleaned up (e.g. after the next good
    start) so it doesn't fill the disk.
