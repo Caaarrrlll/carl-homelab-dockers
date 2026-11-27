@@ -22,7 +22,7 @@ Output: `docs/privacy-comparison.md`.
   fluxer.com)
 - [✓] 2. Comparison table + findings in `docs/privacy-comparison.md`;
   listed in AGENTS.md / README.md; ROADMAP 23 updated
-- [•] 3. Commit `[skip ci]`; report to maintainer
+- [✓] 3. Committed `[skip ci]`; reported to maintainer
 - [ ] 4. Part 2: Stoat (hosted). Part 3: self-hosted fluxer-aio (later)
 
 ## Active task — ROADMAP 22: SteamCMD "state is 0x6" investigation (2026-11-26)
