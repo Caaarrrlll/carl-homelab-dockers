@@ -85,8 +85,8 @@ the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets.
   a Postgres server shared with other apps: moving it, nightly backups),
   [`asa-proton-research.md`](docs/asa-proton-research.md) (Wine vs
   GE-Proton for ASA, ROADMAP 14),
-  [`privacy-comparison.md`](docs/privacy-comparison.md) (Discord vs Fluxer,
-  ROADMAP 23), `housekeeping.md` (open checks on the live
+  [`privacy-comparison.md`](docs/privacy-comparison.md) (Discord vs Fluxer
+  vs Stoat, ROADMAP 23), `housekeeping.md` (open checks on the live
   server), `history/`.
 - `templates/` — bare Unraid Docker templates to copy into
   `/boot/config/plugins/dockerMan/templates-user/` and fill in: `asa-wine.xml`

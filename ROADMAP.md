@@ -341,8 +341,10 @@ from Discord to Fluxer.
 [`docs/privacy-comparison.md`](docs/privacy-comparison.md). Fluxer is
 clearly better on ads, tracking, AI use and age checks; weaker on
 encryption (nothing end-to-end encrypted yet; Discord's calls are) and its
-hosted data is in the US. Next: part 2 (Stoat hosted), part 3
-(self-hosted fluxer-aio).
+hosted data is in the US. **Part 2 done 2026-11-27:** hosted Stoat stores
+data in the EU/UK (its one advantage) but makes no E2EE claim and its
+documents say nothing on AI use, retention, telemetry or funding. Next:
+part 3 (self-hosted fluxer-aio: what still goes to outside services).
 
 Trigger: Discord's privacy policy update (published 2026-11-23, effective
 2026-12-15). Compared with the 2025-09-29 version, it adds: age assurance

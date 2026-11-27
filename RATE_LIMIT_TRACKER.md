@@ -23,7 +23,10 @@ Output: `docs/privacy-comparison.md`.
 - [✓] 2. Comparison table + findings in `docs/privacy-comparison.md`;
   listed in AGENTS.md / README.md; ROADMAP 23 updated
 - [✓] 3. Committed `[skip ci]`; reported to maintainer
-- [ ] 4. Part 2: Stoat (hosted). Part 3: self-hosted fluxer-aio (later)
+- [✓] 4. Part 2: Stoat (hosted) added to `docs/privacy-comparison.md`
+  (2026-11-27): EU/UK data location is its one advantage; no E2EE claim and
+  much thinner documents (no AI, retention, telemetry or funding statements)
+- [ ] 5. Part 3: self-hosted fluxer-aio (later)
 
 ## Active task — ROADMAP 22: SteamCMD "state is 0x6" investigation (2026-11-26)
 
