@@ -11,6 +11,20 @@ Legend: `[ ]` pending · `[•]` in progress (list the files it touches) · `[�
 done and verified · `[✗]` dropped (say why) · `[⏳]` waiting on the maintainer
 (live Unraid action or decision).
 
+## Active task — ROADMAP 23 part 1: Discord vs hosted Fluxer privacy (2026-11-27)
+
+Research only. Part 1 = Discord's latest policy (effective 2026-12-15) vs
+Fluxer's hosted service. Stoat and self-hosted come later.
+Output: `docs/privacy-comparison.md`.
+
+- [✓] 1. Read Fluxer's hosted documents (privacy, terms, AI stance,
+  security, company information, licenses; fluxer.app now redirects to
+  fluxer.com)
+- [✓] 2. Comparison table + findings in `docs/privacy-comparison.md`;
+  listed in AGENTS.md / README.md; ROADMAP 23 updated
+- [•] 3. Commit `[skip ci]`; report to maintainer
+- [ ] 4. Part 2: Stoat (hosted). Part 3: self-hosted fluxer-aio (later)
+
 ## Active task — ROADMAP 22: SteamCMD "state is 0x6" investigation (2026-11-26)
 
 Test copy of the broken install made by the maintainer (2026-11-26):

@@ -89,6 +89,8 @@ Supporting files:
 - `docs/asa-proton-research.md` — research for ROADMAP item 14 (Wine vs
   GE-Proton for the ASA server): findings, sources, recommendation. Move it
   to `docs/history/` when item 14 is closed.
+- `docs/privacy-comparison.md` — ROADMAP item 23: Discord vs Fluxer (and
+  later Stoat / self-hosted) privacy comparison, from published documents.
 - `docs/housekeeping.md` — open **verification** items on the running system
   (under-load re-check, parked Fedora work, idle-crash confirmation on
   Astraeos, autosave check) and a "Record" of confirmed ones (NTSYNC reboot

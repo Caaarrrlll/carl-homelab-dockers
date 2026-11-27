@@ -337,6 +337,12 @@ RAM needs (especially for several servers) decide whether a Pi is big enough.
 the outcome may lead to a planned migration of the maintainer's friend group
 from Discord to Fluxer.
 **Risk: 🟢 Low** (research and docs).
+**Part 1 done 2026-11-27:** Discord vs hosted Fluxer in
+[`docs/privacy-comparison.md`](docs/privacy-comparison.md). Fluxer is
+clearly better on ads, tracking, AI use and age checks; weaker on
+encryption (nothing end-to-end encrypted yet; Discord's calls are) and its
+hosted data is in the US. Next: part 2 (Stoat hosted), part 3
+(self-hosted fluxer-aio).
 
 Trigger: Discord's privacy policy update (published 2026-11-23, effective
 2026-12-15). Compared with the 2025-09-29 version, it adds: age assurance
