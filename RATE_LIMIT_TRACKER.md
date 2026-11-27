@@ -26,7 +26,12 @@ Output: `docs/privacy-comparison.md`.
 - [✓] 4. Part 2: Stoat (hosted) added to `docs/privacy-comparison.md`
   (2026-11-27): EU/UK data location is its one advantage; no E2EE claim and
   much thinner documents (no AI, retention, telemetry or funding statements)
-- [ ] 5. Part 3: self-hosted fluxer-aio (later)
+- [✓] 5. Part 3: self-hosted fluxer-aio in `docs/privacy-comparison.md`
+  (2026-11-27): outside contacts = Google STUN (server IP, avoidable), Klipy
+  and YouTube (our keys), link-preview fetches, push relay only if enabled;
+  E2EE only via Fluxer's roadmap (calls 2026, DMs H1 2027)
+- [⏳] 6. Maintainer: decide on the next step (migration planning item, or
+  STUN/Klipy/YouTube settings); open point: iOS push behaviour
 
 ## Active task — ROADMAP 22: SteamCMD "state is 0x6" investigation (2026-11-26)
 

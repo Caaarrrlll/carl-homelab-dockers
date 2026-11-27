@@ -343,8 +343,12 @@ clearly better on ads, tracking, AI use and age checks; weaker on
 encryption (nothing end-to-end encrypted yet; Discord's calls are) and its
 hosted data is in the US. **Part 2 done 2026-11-27:** hosted Stoat stores
 data in the EU/UK (its one advantage) but makes no E2EE claim and its
-documents say nothing on AI use, retention, telemetry or funding. Next:
-part 3 (self-hosted fluxer-aio: what still goes to outside services).
+documents say nothing on AI use, retention, telemetry or funding. **Part 3
+done 2026-11-27:** self-hosting removes both concerns as far as Fluxer the
+company goes; remaining outside contacts are small and mostly our choice
+(Google STUN for the server's IP, Klipy/YouTube keys, link-preview fetches,
+push relay only if enabled). E2EE only via Fluxer's roadmap (calls in 2026,
+DMs stable H1 2027). Next: step 5 below (plan the migration) if wanted.
 
 Trigger: Discord's privacy policy update (published 2026-11-23, effective
 2026-12-15). Compared with the 2025-09-29 version, it adds: age assurance
