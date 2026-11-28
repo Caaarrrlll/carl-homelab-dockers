@@ -40,6 +40,11 @@ working with Claude Code in this repo.
   The script on Unraid is a copy at `/boot/config/claude-readonly/`: after
   editing it here, copy it to the maintainer's network share and give them
   the `cp` + `sha256sum` commands.
+- **Live template changes:** when a change here means the maintainer has to
+  edit their live Unraid templates (Extra Parameters, paths, env vars), also
+  add it to the "template changes to apply at the next update window"
+  section of their private ops notes (outside this repo; real paths live
+  there, never here), so the next update is done in one pass.
 - **Redaction (maintainer rule, 2026-11-18):** nothing committed here may
   name the maintainer's server: no hostnames, IPs, share names, real appdata
   paths, their container names or port choices, key paths, or weaknesses of
