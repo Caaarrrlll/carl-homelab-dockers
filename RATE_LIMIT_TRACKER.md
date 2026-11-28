@@ -320,7 +320,9 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
     `backups/` empty since 2026-11-27, container healthy after restart
   - maintainer: `fluxer-aio-backup list` shows 3 `verified` nightly backups
     (2026-11-22, -23, -28) in the new location
-  - observed: no nightly backups for 2026-11-24 to -27 (to explain), and the
+  - no nightly backups for 2026-11-24 to -27: explained, fluxer-aio was
+    switched off by the maintainer (not in use yet), so the script skips
+    (by design: "not running; no backup taken"). Also: the
     pre-update backup (2026.1120) is already pruned: see step 12
 - [⏳] 12. Decision (confirmed on live 2026-11-28: the pre-update backup is
   gone, only nightlies left): nightly backups count toward KEEP=3,
