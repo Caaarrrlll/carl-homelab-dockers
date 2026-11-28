@@ -315,11 +315,15 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
   workspace JSON parses, redaction grep clean.
 - [ ] 10. Revoke the SSH key (maintainer), revert CLAUDE.md access note, close
   (NOT yet: maintainer wants the key kept for now, 2026-11-20)
-- [⏳] 11. Backups path (2026-11-21, on hold a few days per maintainer):
-  maintainer copies the old `<data path>/backups/.` to the new Backups host
-  path, applies the template, restarts; then check the start log for
-  `all verified backups passed their checksum check` (read-only `logs`)
-- [⏳] 12. Decision (on hold a few days): nightly backups count toward KEEP=3,
+- [✓] 11. Backups path moved (verified 2026-11-28)
+  - read-only: `/data/backups` mapped to the new share (rw), old appdata
+    `backups/` empty since 2026-11-27, container healthy after restart
+  - maintainer: `fluxer-aio-backup list` shows 3 `verified` nightly backups
+    (2026-11-22, -23, -28) in the new location
+  - observed: no nightly backups for 2026-11-24 to -27 (to explain), and the
+    pre-update backup (2026.1120) is already pruned: see step 12
+- [⏳] 12. Decision (confirmed on live 2026-11-28: the pre-update backup is
+  gone, only nightlies left): nightly backups count toward KEEP=3,
   so the pre-update backup is pruned after three nights. Keep as is, or
   always keep the newest pre-update (`*-to-*`) backup on top of KEEP=3
   (image change to `fluxer-aio-backup` prune)
