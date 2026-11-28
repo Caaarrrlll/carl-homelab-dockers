@@ -324,7 +324,9 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
     switched off by the maintainer (not in use yet), so the script skips
     (by design: "not running; no backup taken"). Also: the
     pre-update backup (2026.1120) is already pruned: see step 12
-- [⏳] 12. Decision (confirmed on live 2026-11-28: the pre-update backup is
+- [⏳] 12. DEFERRED (2026-11-28): fluxer-aio switched off again (not in use
+  yet); revisit when the group moves to the self-hosted instance (ROADMAP 23).
+  Decision (confirmed on live 2026-11-28: the pre-update backup is
   gone, only nightlies left): nightly backups count toward KEEP=3,
   so the pre-update backup is pruned after three nights. Keep as is, or
   always keep the newest pre-update (`*-to-*`) backup on top of KEEP=3
