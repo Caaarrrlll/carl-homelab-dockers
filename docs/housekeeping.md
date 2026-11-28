@@ -11,12 +11,18 @@ discarded. Code/doc work to do later lives in `ROADMAP.md`.
 | 2 | Re-check CPU at full player load | **optional** | Idle reference (2026-11-07): ~2.7–2.9% of one core vs ~high-3% pre-NTSYNC. Expect the gap to widen with concurrent player/entity load; compare `docker stats` CPU% and tick responsiveness under a full session. |
 | 3 | Fedora base image re-activation | **parked** | `images/systems/fedora-base` is unused and opt-in in CI (`.github/images.json`: built only when named or its files change). Re-enable when a workload actually needs it (see AGENTS.md note). |
 | 6 | Confirm the idle-crash fixes on newer maps | **Lost Colony confirmed 2026-11-21; Astraeos leaning solved (2026-11-24, not a full pass)** | Crashes seen on Astraeos / Lost Colony after a long idle period; Astraeos also used to break after a restart. **2026-11-24 (maintainer):** Astraeos has had several clean start-ups and shutdowns since the fixes, but no long running period yet; estimated ~65% that it is solved. Still to see: a long uptime (idle past the old crash window) followed by a clean restart. **2026-11-26 (maintainer):** more successful boots, but still no very long running session: a power outage and game updates have kept restarting it, so the long-run check hasn't been possible yet. **2026-11-28 (read-only check + maintainer):** up since 2026-11-27 15:13 UTC (~20 h), no restarts, no crash/error lines in the readable log, the automatic wild-dino wipe ran fine at 02:30 UTC, and the 2 h 15 min `.ark` snapshots are continuous since the start. Plan: let it reach ~48 h, then restart to confirm it boots. Changes made 2026-11-17: `vm.max_map_count=1048576`, a swapfile on the cache drive, `--shm-size=4g`, `ulimit -s 8192`. Leave a server on one of these maps idle past the old crash window, then check uptime and the log. If it still crashes, note which change to revisit. |
-| 8 | Confirm autosave every `AUTOSAVE_MINUTES` (15) | **pending** | ARK receives `?AutoSavePeriodMinutes=15` on its launch line (confirmed in the `Commandline:` log entry 2026-11-17). Still to see: a world-save entry roughly every 15 minutes in a server's `<MAP>-ShooterGame.log` (e.g. `grep -iE "sav(ed|ing)" …/Logs/Astraeos_WP-ShooterGame.log \| tail`). **2026-11-28:** that grep finds nothing (ARK doesn't log autosaves there), so check the main save file instead: `ls -l --time-style=+%H:%M <serverfiles>/ShooterGame/Saved/SavedArks/<map>/<map>.ark` twice, ~15 min apart; its time must move forward each time. First reading on Astraeos: 13:30 local, at the same moment as a snapshot; second reading pending. (The timestamped `<map>_<date>.ark` files are ARK's own backup snapshots, every 2 h 15 min, not the autosave.) |
 
 ## Record
 
 When an item is confirmed, note the date and result below (and delete it from
 the table):
+
+- 2026-11-28 — Item 8, autosave every 15 min confirmed on Astraeos: the
+  main save file (`SavedArks/<map>/<map>.ark`) moved from 13:30 to 13:45
+  local between two checks, with nobody online, so ARK saves every 15 min
+  even when empty. ARK doesn't log autosaves to `ShooterGame.log`; check the
+  file time instead. The timestamped `<map>_<date>.ark` files are ARK's own
+  snapshots of every 9th save (every 2 h 15 min).
 
 - 2026-11-21 — Items 1 + 4, NTSYNC survives a reboot: after the maintainer's
   reboot, `lsmod` shows `ntsync` loaded and `/dev/ntsync` exists (created at

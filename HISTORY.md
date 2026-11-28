@@ -7,6 +7,19 @@ long-running upgrade finishes, its tracking document is moved under
 `docs/history/2026-11-07-ntsync-wine11.md`) so entries sort chronologically,
 and referenced from this file.
 
+## 2026-11-28 — ASA stop timeout 120 s, autosave confirmed
+
+- **Why:** an ASA server was force-killed by Docker (exit 137) after
+  its `SaveWorld` had succeeded and `DoExit` was sent, while the game was
+  still closing. The save was safe, but a force-kill at that point could
+  catch the server mid-write.
+- **What:** the template's `--stop-timeout` raised from 60 s to 120 s
+  (`templates/asa-wine.xml`, ASA README). Template only, no image change;
+  the maintainer applies it to the live templates at the next planned
+  update.
+- **Autosave confirmed** (housekeeping item 8): ARK saves every 15 min even
+  with nobody online; it doesn't log this, so check the main `.ark` file's
+  time.
 ## 2026-11-21 — Code-style reformat of our scripts and Dockerfiles
 
 - **Why:** the maintainer adopted a global readability standard for shell,

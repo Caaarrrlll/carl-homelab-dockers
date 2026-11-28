@@ -9,7 +9,7 @@ The image is built for **Unraid**. A bare template is in
 [`templates/asa-wine.xml`](../../../templates/asa-wine.xml): copy it to
 `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml` (one copy per
 map) and add it from **Docker → Add Container**. It sets privileged mode,
-`--restart=unless-stopped --shm-size=4g --stop-timeout=60`, shared server
+`--restart=unless-stopped --shm-size=4g --stop-timeout=120`, shared server
 files, cluster `mycluster` (placeholder) and ports `7760+n` / `27000+n`. Its
 defaults are filled in for The Island; for another map change the name, map,
 server name, both ports (and `-port` / `-QueryPort`) and the mod list, and set
@@ -154,12 +154,13 @@ When the container is stopped (Unraid stop, update, array stop, reboot),
    during start-up): `SIGTERM`, then up to 5 s. The log then shows a warning
    that no save was made.
 
-Worst case is about 55 s, inside the 60 s stop timeout. The server process is
-found by its command line (`pgrep -f ArkAscendedServer.exe`), and the `su`
+Worst case is about 55 s, well inside the 120 s stop timeout. The server
+process is found by its command line (`pgrep -f ArkAscendedServer.exe`), and the `su`
 session that runs `start-server.sh` is ended only after the save.
 
-The template sets `--stop-timeout=60`. Docker's default is 10 s, after which
-it force-kills the container mid-save. If saves on a large map ever take
+The template sets `--stop-timeout=120` (raised from 60 s on 2026-11-28: a
+server was force-killed after its save while it was still exiting). Docker's
+default is 10 s, after which it force-kills the container mid-save. If saves on a large map ever take
 longer, raise both the stop timeout and the 30 s save limit in `start.sh`.
 
 RCON uses `SRV_ADMIN_PWD`, which is on ARK's launch line. Nothing needs to be
@@ -264,7 +265,7 @@ docker run --name ASA-Wine -d \
   -p 7777:7777/udp -p 27015:27015/udp \
   --device=/dev/ntsync \
   --shm-size=4g \
-  --stop-timeout=60 \
+  --stop-timeout=120 \
   --env 'SERVER_NAME=My ASA Server' \
   --env 'MAP=TheIsland_WP' \
   --env 'SRV_PWD=changeme' \

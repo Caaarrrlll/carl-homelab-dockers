@@ -313,8 +313,8 @@ release `2026.1118.90548` compose bundle (official images pinned by digest).
   2026-11-20 entry; fluxer-aio folder in `dockers.code-workspace`.
   Infrastructure docs parked (maintainer). Checks: `git diff --check`,
   workspace JSON parses, redaction grep clean.
-- [ ] 10. Revoke the SSH key (maintainer), revert CLAUDE.md access note, close
-  (NOT yet: maintainer wants the key kept for now, 2026-11-20)
+- [✗] 10. Revoke the SSH key: dropped (maintainer, 2026-11-28): read-only
+  access stays until further notice; CLAUDE.md access note updated
 - [✓] 11. Backups path moved (verified 2026-11-28)
   - read-only: `/data/backups` mapped to the new share (rw), old appdata
     `backups/` empty since 2026-11-27, container healthy after restart

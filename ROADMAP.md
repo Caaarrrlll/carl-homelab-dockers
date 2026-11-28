@@ -233,6 +233,35 @@ Implementation (after the investigation, in `start-server.sh`):
 - Document the manual fix in the ASA README / `docs/operations.md`
   (agent-agnostic steps), and update `audit.md`.
 
+### 24. ASA: GameAnalytics debug lines flood the container log (and send telemetry)
+**Status: 🔭 TO DO (added 2026-11-28).** No image change for now
+(maintainer: no container updates at the moment).
+**Risk: 🟢 Low** for step 1 (template only, one server first); **🟡 Medium**
+for step 2 (changes the launch line).
+
+Item 15 (2026-11-18) moved ARK's GameAnalytics database to a tmpfs, but the
+game still prints GameAnalytics debug output to stdout. On a live server
+(2026-11-28) only 17 of the last 2000 container log lines were game lines;
+the rest were `D Debug/GameAnalytics : Sending 'events' URL: https://api...`
+and gzip/body lines. So the container log (Unraid's log view, `docker logs`)
+covers only ~10 h and hides useful lines. It also shows ARK sending usage
+events to GameAnalytics, a third-party analytics service.
+
+Plan:
+
+1. **Block the endpoint (template only):** add
+   `--add-host=api.gameanalytics.com:127.0.0.1` (check the exact host in a
+   log line first) to Extra Parameters on **one** server. Check whether the
+   lines stop or turn into retry/error lines, and that the server still
+   starts, joins and saves. If it works, roll it out to the others and the
+   bare template. Side benefit: no usage data leaves the server.
+2. **If the lines remain, filter them at launch (image change):** in
+   `start-server.sh`, pass the server's output through
+   `grep --line-buffered -v 'Debug/GameAnalytics'` so only game lines reach
+   the container log. Make sure the server PID lookup (`pgrep -f`) and the
+   stop handler are unaffected; simulate, then test on one container.
+3. Update README (template notes), `audit.md`, and close item 15's note.
+
 ## Future / research
 
 ### 14. Chore: Wine vs Proton / Proton-GE for the ASA server

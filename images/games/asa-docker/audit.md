@@ -82,6 +82,11 @@
 
 ## Known issues / follow-ups
 
+- **2026-11-28:** the template's `--stop-timeout` is now 120 s (was 60 s;
+  template/README only, no image change). The comment above the stop handler
+  in `scripts/start.sh` still says `--stop-timeout=60`; update it with the
+  next image change (not done now, to avoid a rebuild).
+
 - **Accepted:** default game passwords are baked into the Dockerfile
   (`SRV_PWD="Docker"`, `SRV_ADMIN_PWD="adminDocker"`). This image targets
   Unraid, whose template supplies both values at container creation, so the

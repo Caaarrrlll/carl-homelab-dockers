@@ -28,13 +28,13 @@ working with Claude Code in this repo.
   (live tests, applying template changes to the live containers, reboots) is a
   `[⏳]` tracker step with the exact command for the maintainer. Never mark it
   `[✓]` until they report the result.
-- **Temporary read-only access (since 2026-11-18, for the `fluxer-aio`
-  build; revoke at tracker step 10, then delete this bullet).** A restricted
-  SSH key runs only `scripts/unraid-readonly.sh` on the server:
-  `ssh -i <key> -o IdentitiesOnly=yes -o BatchMode=yes root@<unraid-host> "<request>"`
-  with `<request>` one of `help`, `ps`, `logs <c> [n]`, `inspect <c>`,
-  `stats`, `ls [subpath]`, `health` (containers: `fluxer-aio`, `Caddy`,
-  `Redis`). The real key path, host and share are in Claude's memory, not
+- **Read-only access (since 2026-11-18; kept until further notice,
+  maintainer 2026-11-28).** A restricted SSH key runs only
+  `scripts/unraid-readonly.sh` on the server, through the `unraid-ro` alias
+  in the maintainer's `~/.ssh/config`: `ssh unraid-ro "<request>"` with
+  `<request>` one of `help`, `ps`, `logs <c> [n]`, `inspect <c>`, `stats`,
+  `ls [subpath]`, `health`; `ssh unraid-ro help` lists the allowed
+  containers. The real key path, host and share are in Claude's memory, not
   here. Label anything checked this way "verified on Unraid via read-only
   access". Never try to work around a refusal; ask the maintainer instead.
   The script on Unraid is a copy at `/boot/config/claude-readonly/`: after
